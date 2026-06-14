@@ -46,7 +46,7 @@ class AddDeviceDialog(QDialog):
         layout.addRow("Region:", self.region_input)
 
         self.section_input = QLineEdit()
-        self.section_input.setPlaceholderText("如: az1")
+        self.section_input.setPlaceholderText("如: az1/nc01")
         layout.addRow("Section:", self.section_input)
 
         self.role_combo = QComboBox()
