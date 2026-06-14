@@ -68,6 +68,10 @@ db.save_ssh_connection({...})
 # 设备
 db.list_devices(region="芜湖202")
 db.match_devices(region="芜湖202", section_glob="az*", role="cnt")
+# Excel 导入示例:
+# hostname,ip,region,section,role,vendor,description
+# WH-AZ1-Core01,10.0.1.1,芜湖202,az1/nc01,cnt,华为,核心
+# WH-AZ2-Agg01,10.0.2.1,芜湖202,az1/nc02/nws01,dsw,锐捷,汇聚
 db.import_devices([{...}, ...])  # Excel 导入用
 
 # Region 映射

@@ -34,7 +34,7 @@ class DeviceTask:
     ip: str
     hostname: str
     region: str
-    section: str
+    section: str  # 设备归属路径，多级用/分隔，如 az1/nc01/nws01
     role: str
     vendor: str
     commands: list          # 执行命令列表（已解析）

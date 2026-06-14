@@ -46,7 +46,7 @@ CREATE_TABLES = [
         hostname TEXT NOT NULL,
         ip TEXT NOT NULL,
         region TEXT NOT NULL,
-        section TEXT NOT NULL,
+        section TEXT NOT NULL,  -- 设备归属路径，多级用/分隔，如 az1/nc01/nws01
         role TEXT NOT NULL,
         vendor TEXT,
         description TEXT,
@@ -55,6 +55,16 @@ CREATE_TABLES = [
         created_at TEXT,
         updated_at TEXT,
         UNIQUE(region, section, hostname)
+    )""",
+
+    # 全局设备组模板
+    """CREATE TABLE IF NOT EXISTS device_group_templates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        section_pattern TEXT NOT NULL,
+        role TEXT NOT NULL,
+        description TEXT,
+        created_at TEXT
     )""",
 
     # 全局设备组模板
@@ -199,7 +209,7 @@ class Database:
         return [dict(r) for r in rows]
 
     def resolve_ssh(self, region: str, section: str) -> Optional[dict]:
-        """根据 Region+Section 查找对应的 SSH 连接"""
+        """根据 Region+Section 查找对应的 SSH 连接，支持层级路径匹配（精确 > 通配符 > default）"""
         # 精确匹配
         r = self.conn.execute("""
             SELECT sc.* FROM region_mapping rm
@@ -289,7 +299,8 @@ class Database:
         self.conn.commit()
 
     def match_devices(self, region: str, section_glob: str, role: str) -> list:
-        """按 Region + Section通配符 + Role 匹配设备"""
+        """按 Region + Section通配符 + Role 匹配设备
+        section_glob: 支持 LIKE 通配符，格式如 az1/nc01（精确）或 az1/%（通配多级）"""
         rows = self.conn.execute("""
             SELECT * FROM devices
             WHERE region=? AND section GLOB ? AND role=? AND is_active=1
