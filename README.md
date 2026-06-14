@@ -11,14 +11,14 @@ network-collector/
 │   ├── expect_engine.py   # SSH + expect 会话引擎
 │   ├── collector.py       # 采集调度引擎
 │   └── crypto.py          # AES 密码加密
-├── ui/                    # ← 你用 Claude Code 写（PyQt5）
+├── ui/                    # ← Claude Code 写（PyQt5）
 │   ├── main_window.py     # 主窗口
 │   ├── config_panel.py    # SSH连接/Region配置
 │   ├── device_panel.py    # 设备管理
 │   ├── scene_editor.py    # 场景编辑
 │   ├── task_panel.py      # 任务创建/执行
 │   └── result_panel.py    # 结果展示
-├── plugins/               # 分析插件（我后续写）
+├── plugins/               # 分析插件（后续开发）
 ├── docs/
 │   ├── 技术方案.md         # 完整设计文档
 │   ├── UI原型.md           # 界面布局
