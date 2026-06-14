@@ -67,11 +67,11 @@ class RegionMappingDialog(QDialog):
         layout = QFormLayout(self)
 
         self.region_input = QLineEdit()
-        self.region_input.setPlaceholderText("如: 芜湖202")
+        self.region_input.setPlaceholderText("如: RegionA")
         layout.addRow("Region:", self.region_input)
 
         self.section_input = QLineEdit()
-        self.section_input.setPlaceholderText("如: az1/nc01 / az1/% / %")
+        self.section_input.setPlaceholderText("如: Rack1-Core / Rack1-% / %")
         layout.addRow("Section:", self.section_input)
 
         self.ssh_combo = QComboBox()

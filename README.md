@@ -66,16 +66,16 @@ db.list_ssh_connections()
 db.save_ssh_connection({...})
 
 # 设备
-db.list_devices(region="芜湖202")
-db.match_devices(region="芜湖202", section_glob="az*", role="cnt")
+db.list_devices(region="RegionA")
+db.match_devices(region="RegionA", section_glob="az*", role="core")
 # Excel 导入示例:
 # hostname,ip,region,section,role,vendor,description
-# WH-AZ1-Core01,10.0.1.1,芜湖202,az1/nc01,cnt,华为,核心
-# WH-AZ2-Agg01,10.0.2.1,芜湖202,az1/nc02/nws01,dsw,锐捷,汇聚
+# WH-AZ1-Core01,10.0.1.1,RegionA,Rack1-Core,core,VendorA,核心
+# WH-AZ2-Agg01,10.0.2.1,RegionA,Rack1-Access-01,distribution,VendorB,汇聚
 db.import_devices([{...}, ...])  # Excel 导入用
 
 # Region 映射
-db.resolve_ssh(region="芜湖202", section="az1")  # → SSH连接配置
+db.resolve_ssh(region="RegionA", section="Rack1")  # → SSH连接配置
 
 # 场景
 db.list_scenes()

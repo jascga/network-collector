@@ -1,7 +1,7 @@
 """
 command_set_panel.py — 命令集管理
 
-管理可复用的设备命令集，支持厂商差异化（华为/锐捷/通用）。
+管理可复用的设备命令集，支持厂商差异化（VendorA/VendorB/通用）。
 """
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
@@ -61,7 +61,7 @@ class CommandSetPanel(QWidget):
         self.name_input = QLineEdit()
         form.addRow("名称:", self.name_input)
         self.vendor_combo = QComboBox()
-        self.vendor_combo.addItems(["通用", "华为", "锐捷"])
+        self.vendor_combo.addItems(["通用", "VendorA", "VendorB"])
         form.addRow("厂商:", self.vendor_combo)
         self.desc_input = QLineEdit()
         form.addRow("描述:", self.desc_input)

@@ -46,7 +46,7 @@ CREATE_TABLES = [
         hostname TEXT NOT NULL,
         ip TEXT NOT NULL,
         region TEXT NOT NULL,
-        section TEXT NOT NULL,  -- 设备归属路径，多级用/分隔，如 az1/nc01/nws01
+        section TEXT NOT NULL,  -- 设备归属路径，多级用/分隔，如 Rack1-Core-01
         role TEXT NOT NULL,
         vendor TEXT,
         description TEXT,
@@ -71,7 +71,7 @@ CREATE_TABLES = [
     """CREATE TABLE IF NOT EXISTS command_sets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT UNIQUE NOT NULL,
-        vendor TEXT,                   -- 华为/锐捷/null(通用)
+        vendor TEXT,                   -- VendorA/VendorB/null(通用)
         description TEXT,
         commands TEXT NOT NULL,        -- JSON: [{"cmd":"...", "output_format":{...}}]
         created_at TEXT,
@@ -290,7 +290,7 @@ class Database:
 
     def match_devices(self, region: str, section_glob: str, role: str) -> list:
         """按 Region + Section通配符 + Role 匹配设备
-        section_glob: 支持 LIKE 通配符，格式如 az1/nc01（精确）或 az1/%（通配多级）"""
+        section_glob: 支持 LIKE 通配符，格式如 Rack1-Core（精确）或 Rack1-%（通配多级）"""
         rows = self.conn.execute("""
             SELECT * FROM devices
             WHERE region=? AND section GLOB ? AND role=? AND is_active=1

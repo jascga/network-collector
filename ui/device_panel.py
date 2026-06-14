@@ -42,20 +42,20 @@ class AddDeviceDialog(QDialog):
         layout.addRow("IP地址:", self.ip_input)
 
         self.region_input = QLineEdit()
-        self.region_input.setPlaceholderText("如: 芜湖202")
+        self.region_input.setPlaceholderText("如: RegionA")
         layout.addRow("Region:", self.region_input)
 
         self.section_input = QLineEdit()
-        self.section_input.setPlaceholderText("如: az1/nc01")
+        self.section_input.setPlaceholderText("如: Rack1-Core")
         layout.addRow("Section:", self.section_input)
 
         self.role_combo = QComboBox()
         self.role_combo.setEditable(True)
-        self.role_combo.addItems(["cnt", "fa", "acc", "fw", "ext"])
+        self.role_combo.addItems(["core", "access", "distribution", "fw", "ext"])
         layout.addRow("Role:", self.role_combo)
 
         self.vendor_combo = QComboBox()
-        self.vendor_combo.addItems(["", "华为", "锐捷"])
+        self.vendor_combo.addItems(["", "VendorA", "VendorB"])
         layout.addRow("厂商:", self.vendor_combo)
 
         self.desc_input = QLineEdit()
@@ -131,7 +131,7 @@ class DevicePanel(QWidget):
 
         filter_layout.addWidget(QLabel("Role:"))
         self.role_filter = QComboBox()
-        self.role_filter.addItems(["全部", "cnt", "fa", "acc", "fw", "ext"])
+        self.role_filter.addItems(["全部", "core", "access", "distribution", "fw", "ext"])
         filter_layout.addWidget(self.role_filter)
 
         filter_layout.addWidget(QLabel("搜索:"))

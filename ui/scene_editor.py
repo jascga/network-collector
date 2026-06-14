@@ -484,7 +484,7 @@ class DeviceGroupDialog(QDialog):
         layout.addRow("Section:", self.section_input)
 
         self.role_input = QLineEdit()
-        self.role_input.setPlaceholderText("如: cnt / fa / acc / fw")
+        self.role_input.setPlaceholderText("如: core / access / distribution / fw")
         layout.addRow("Role:", self.role_input)
 
         self.desc_input = QLineEdit()
