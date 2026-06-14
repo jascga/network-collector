@@ -67,16 +67,6 @@ CREATE_TABLES = [
         created_at TEXT
     )""",
 
-    # 全局设备组模板
-    """CREATE TABLE IF NOT EXISTS device_group_templates (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL,
-        section_pattern TEXT NOT NULL,
-        role TEXT NOT NULL,
-        description TEXT,
-        created_at TEXT
-    )""",
-
     # 命令集
     """CREATE TABLE IF NOT EXISTS command_sets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
