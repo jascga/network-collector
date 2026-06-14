@@ -358,11 +358,12 @@ class Database:
         return cur.lastrowid
 
     def update_task_status(self, task_id: int, status: str, result_summary: dict = None):
-        data = {"id": task_id, "status": status}
-        if result_summary:
-            data["result_summary"] = json.dumps(result_summary, ensure_ascii=False)
-        if status in ("completed", "failed", "cancelled"):
-            data["completed_at"] = datetime.datetime.now().isoformat()
+        data = {
+            "id": task_id,
+            "status": status,
+            "result_summary": json.dumps(result_summary, ensure_ascii=False) if result_summary else None,
+            "completed_at": datetime.datetime.now().isoformat() if status in ("completed", "failed", "cancelled") else None,
+        }
         self.conn.execute("""UPDATE tasks SET status=:status,result_summary=:result_summary,completed_at=:completed_at WHERE id=:id""", data)
         self.conn.commit()
 
