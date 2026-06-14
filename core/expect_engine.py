@@ -110,9 +110,20 @@ class SSHExpectSession:
         """
         读取输出直到匹配到 expect 模式
         返回：匹配到的输出文本
+
+        支持两种模式：
+        - 普通模式：子串匹配（默认），如 "Opt or ID>:"
+        - 正则模式：以 "regex:" 开头，如 "regex:Opt (or )?ID>?"
         """
         deadline = time.time() + timeout
         buffer = ""
+
+        # 判断是否为正则模式
+        use_regex = pattern.startswith("regex:")
+        if use_regex:
+            regex_pattern = re.compile(pattern[6:])
+        else:
+            regex_pattern = re.compile(re.escape(pattern))
 
         while time.time() < deadline:
             if self.channel and self.channel.recv_ready():
@@ -122,8 +133,9 @@ class SSHExpectSession:
                 except:
                     break
 
-            if pattern in buffer:
-                logger.debug(f"匹配到 '{pattern}', 已收 {len(buffer)} 字符")
+            if regex_pattern.search(buffer):
+                matched = regex_pattern.search(buffer).group()
+                logger.debug(f"匹配到 '{matched}', 已收 {len(buffer)} 字符")
                 return buffer
 
             time.sleep(0.1)

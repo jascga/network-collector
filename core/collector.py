@@ -333,7 +333,7 @@ class Collector:
 
                     collector = DeviceCollector(
                         device=device_task,
-                        cancel_flag=lambda: self._is_cancelled(task_id),
+                        cancel_flag=lambda tid=task_id: self._is_cancelled(tid),
                         output_dir=task_dir / f"devices/{dev['ip']}",
                     )
 
@@ -368,7 +368,28 @@ class Collector:
             callback(task_id, summary)
 
     def _build_commands(self, command_set_ids: list) -> list:
-        """从命令集 ID 构建命令列表"""
+        """从命令集 ID 列表构建命令列表"""
         commands = []
-        # 开发时先返回简化版本，后续从 DB 读取
-        return []
+        if not command_set_ids:
+            return commands
+        for cmd_id in command_set_ids:
+            row = self.db.conn.execute(
+                "SELECT id, commands FROM command_sets WHERE id=?", (cmd_id,)
+            ).fetchone()
+            if not row:
+                logger.warning(f"命令集 ID {cmd_id} 不存在，跳过")
+                continue
+            cmds_json = row["commands"]
+            if isinstance(cmds_json, str):
+                try:
+                    cmds = json.loads(cmds_json)
+                except json.JSONDecodeError as e:
+                    logger.warning(f"命令集 {cmd_id} JSON 解析失败: {e}")
+                    continue
+            elif isinstance(cmds_json, list):
+                cmds = cmds_json
+            else:
+                continue
+            if isinstance(cmds, list):
+                commands.extend(cmd if isinstance(cmd, dict) else {"cmd": str(cmd)} for cmd in cmds)
+        return commands

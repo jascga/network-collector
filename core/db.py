@@ -212,10 +212,10 @@ class Database:
         r = self.conn.execute("""
             SELECT sc.* FROM region_mapping rm
             JOIN ssh_connections sc ON rm.ssh_connection_id = sc.id
-            WHERE rm.region=? AND rm.section GLOB ?
+            WHERE rm.region=? AND rm.section LIKE ?
             ORDER BY LENGTH(rm.section) DESC
             LIMIT 1
-        """, (region, section.replace("*", "%"))).fetchone()
+        """, (region, section)).fetchone()
         if r:
             return dict(r)
         # default 回退
@@ -259,6 +259,23 @@ class Database:
         self.conn.commit()
         return cur.lastrowid
 
+    def update_device(self, device_id: int, data: dict):
+        """更新设备信息"""
+        data["updated_at"] = datetime.datetime.now().isoformat()
+        data["id"] = device_id
+        self.conn.execute("""UPDATE devices SET
+            hostname=:hostname,ip=:ip,region=:region,section=:section,
+            role=:role,vendor=:vendor,description=:description,
+            source=:source,is_active=:is_active,updated_at=:updated_at
+            WHERE id=:id""", data)
+        self.conn.commit()
+
+    def delete_device(self, device_id: int):
+        """软删除设备"""
+        self.conn.execute("UPDATE devices SET is_active=0, updated_at=? WHERE id=?",
+                          (datetime.datetime.now().isoformat(), device_id))
+        self.conn.commit()
+
     def import_devices(self, devices: list[dict]):
         """批量导入设备（Excel导入用）"""
         now = datetime.datetime.now().isoformat()
@@ -287,8 +304,8 @@ class Database:
         return [dict(r) for r in rows]
 
     def get_scene(self, scene_id: int) -> Optional[dict]:
-        r = self.conn.execute("SELECT * FROM scene_templates WHERE id=?", (scene_id,)).fetchall()
-        return dict(r[0]) if r else None
+        r = self.conn.execute("SELECT * FROM scene_templates WHERE id=?", (scene_id,)).fetchone()
+        return dict(r) if r else None
 
     def save_scene(self, data: dict) -> int:
         now = datetime.datetime.now().isoformat()
@@ -304,6 +321,27 @@ class Database:
              :input_params,:sub_scenes,:device_groups,:command_set_ids,:is_template,:created_at,:updated_at)""", data)
         self.conn.commit()
         return cur.lastrowid
+
+    def update_scene(self, scene_id: int, data: dict):
+        """更新场景"""
+        data["updated_at"] = datetime.datetime.now().isoformat()
+        for field in ("input_params", "sub_scenes", "device_groups", "command_set_ids"):
+            if isinstance(data.get(field), (list, dict)):
+                data[field] = json.dumps(data[field], ensure_ascii=False)
+        data["id"] = scene_id
+        self.conn.execute("""UPDATE scene_templates SET
+            name=:name,scene_type=:scene_type,description=:description,
+            analyzer_plugin=:analyzer_plugin,web_system=:web_system,version=:version,
+            input_params=:input_params,sub_scenes=:sub_scenes,
+            device_groups=:device_groups,command_set_ids=:command_set_ids,
+            is_template=:is_template,updated_at=:updated_at
+            WHERE id=:id""", data)
+        self.conn.commit()
+
+    def delete_scene(self, scene_id: int):
+        """删除场景"""
+        self.conn.execute("DELETE FROM scene_templates WHERE id=?", (scene_id,))
+        self.conn.commit()
 
     # ── 任务 ──────────────────────────────────────────
 
@@ -352,6 +390,23 @@ class Database:
             VALUES (:name,:vendor,:description,:commands,:created_at,:updated_at)""", data)
         self.conn.commit()
         return cur.lastrowid
+
+    def update_command_set(self, cmd_id: int, data: dict):
+        """更新命令集"""
+        data["updated_at"] = datetime.datetime.now().isoformat()
+        if isinstance(data.get("commands"), list):
+            data["commands"] = json.dumps(data["commands"], ensure_ascii=False)
+        data["id"] = cmd_id
+        self.conn.execute("""UPDATE command_sets SET
+            name=:name,vendor=:vendor,description=:description,
+            commands=:commands,updated_at=:updated_at
+            WHERE id=:id""", data)
+        self.conn.commit()
+
+    def delete_command_set(self, cmd_id: int):
+        """删除命令集"""
+        self.conn.execute("DELETE FROM command_sets WHERE id=?", (cmd_id,))
+        self.conn.commit()
 
     # ── 导入导出 ──────────────────────────────────────
 
