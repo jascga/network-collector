@@ -6,7 +6,7 @@
 
 ```
 network-collector/
-├── core/                  # ← 我（大锤）维护，不依赖 GUI
+├── core/                  # ← OpenClaw 维护，不依赖 GUI
 │   ├── db.py              # SQLite 数据库层
 │   ├── expect_engine.py   # SSH + expect 会话引擎
 │   ├── collector.py       # 采集调度引擎
@@ -30,8 +30,8 @@ network-collector/
 
 | 谁 | 负责 | 技术栈 |
 |----|------|--------|
-| **大锤（服务器）** | `core/` 层 + `plugins/` 分析插件 | Python 后端 |
-| **你 + Claude Code（Windows）** | `ui/` 层 + `main.py` | PyQt5 |
+| **OpenClaw（服务器）** | `core/` 层 + `plugins/` 分析插件 | Python 后端 |
+| **Claude Code（Windows）** | `ui/` 层 + `main.py` | PyQt5 |
 
 ## 开始开发
 
