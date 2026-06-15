@@ -216,7 +216,7 @@ class ConfigPanel(QWidget):
 
         # 变量提示
         var_hint = QLabel("💡 send 中可用 <code>{device_ip}</code>，自动替换为每台设备的实际IP")
-        var_hint.setStyleSheet("color: #666; font-size: 12px; padding: 2px 0;")
+        var_hint.setStyleSheet("color: #666; font-size: 14px; padding: 4px 0;")
         edit_layout.addWidget(var_hint)
 
         expect_btn_layout = QHBoxLayout()
