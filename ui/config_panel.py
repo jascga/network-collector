@@ -410,28 +410,45 @@ class ConfigPanel(QWidget):
         if not host:
             QMessageBox.warning(self, "提示", "请先填写主机地址")
             return
+
+        # 测试前自动保存（新建连接先存到DB，已有连接更新）
+        key_pwd_raw = self.key_password_input.text()
+        key_pwd_encrypted = encrypt(self.cipher, key_pwd_raw) if self.cipher and key_pwd_raw else ""
+        data = {
+            "name": self.name_input.text().strip() or host,
+            "host": host,
+            "port": self.port_spin.value(),
+            "username": self.username_input.text().strip(),
+            "key_path": self.key_path_input.text().strip(),
+            "key_password": key_pwd_encrypted,
+            "expect_flow": self._collect_flow(),
+        }
+        if self._current_conn_id:
+            self.db.update_ssh_connection(self._current_conn_id, data)
+        else:
+            self._current_conn_id = self.db.save_ssh_connection(data)
+        self._refresh_connection_list()
+
         config = {
             "host": host,
             "port": self.port_spin.value(),
             "username": self.username_input.text().strip(),
             "key_path": self.key_path_input.text().strip(),
         }
-        key_pwd = self.key_password_input.text()
-        self.tester = SSHTester(config, key_pwd)
+        self.tester = SSHTester(config, key_pwd_raw)
         self.tester.finished.connect(self._on_test_finished)
         self.tester.start()
         # 先更新状态列为"测试中"
-        if self._current_conn_id:
-            self.db.update_ssh_status(self._current_conn_id, "testing")
-            self._refresh_connection_list()
+        self.db.update_ssh_status(self._current_conn_id, "testing")
+        self._refresh_connection_list()
         # 用状态栏提示，不弹模态框
-        parent = self.window() if hasattr(self, 'window') else self
+        parent = self.window()
         if hasattr(parent, 'statusBar'):
             parent.statusBar().showMessage("⏳ 正在测试连接...", 0)
 
     def _on_test_finished(self, success: bool, message: str):
         # 清除状态栏提示
-        parent = self.window() if hasattr(self, 'window') else self
+        parent = self.window()
         if hasattr(parent, 'statusBar'):
             parent.statusBar().clearMessage()
         # 更新状态到数据库和列表
