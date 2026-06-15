@@ -447,9 +447,23 @@ class Database:
         }
 
     def import_config(self, config: dict):
-        """导入全局配置"""
+        """导入全局配置（如有同名连接则覆盖）"""
         for conn in config.get("ssh_connections", []):
             conn["key_password"] = ""
-            self.save_ssh_connection(conn)
+            existing = self.get_ssh_connection_by_name(conn.get("name", ""))
+            if existing:
+                self.update_ssh_connection(existing["id"], conn)
+            else:
+                self.save_ssh_connection(conn)
         for mapping in config.get("region_mapping", []):
-            self.save_region_mapping(mapping)
+            existing = self.conn.execute(
+                "SELECT id FROM region_mapping WHERE region=? AND section=?",
+                (mapping.get("region"), mapping.get("section")),
+            ).fetchone()
+            if existing:
+                self.conn.execute("""UPDATE region_mapping SET
+                    ssh_connection_id=:ssh_connection_id, is_default=:is_default
+                    WHERE region=:region AND section=:section""", mapping)
+            else:
+                self.save_region_mapping(mapping)
+        self.conn.commit()
