@@ -351,6 +351,7 @@ class ConfigPanel(QWidget):
         self.expect_table.setRowCount(0)
 
     def _new_connection(self):
+        self._current_conn_id = None
         self._clear_edit_form()
         self.conn_table.clearSelection()
 
