@@ -295,9 +295,11 @@ class ConfigPanel(QWidget):
             self.conn_table.setItem(row, 4, status_item)
             self.conn_table.item(row, 0).setData(Qt.UserRole, conn["id"])
         # 重新绑定行选中信号（setRowCount后selectionModel可能重建）
-        self.conn_table.selectionModel().selectionChanged.connect(
-            self._on_conn_selected, Qt.UniqueConnection
-        )
+        try:
+            self.conn_table.selectionModel().selectionChanged.disconnect(self._on_conn_selected)
+        except TypeError:
+            pass
+        self.conn_table.selectionModel().selectionChanged.connect(self._on_conn_selected)
         self._clear_edit_form()
 
     def _on_conn_selected(self):
