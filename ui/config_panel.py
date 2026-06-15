@@ -393,6 +393,16 @@ class ConfigPanel(QWidget):
             QMessageBox.warning(self, "提示", "名称和主机不能为空")
             return
 
+        # 覆盖确认
+        if self._current_conn_id:
+            reply = QMessageBox.question(
+                self, "确认覆盖",
+                "确认要覆盖当前选中的连接吗？",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+            )
+            if reply != QMessageBox.Yes:
+                return
+
         # 加密私钥密码
         key_pwd_plain = self.key_password_input.text()
         key_pwd_encrypted = encrypt(self.cipher, key_pwd_plain) if key_pwd_plain and self.cipher else ""
@@ -420,6 +430,16 @@ class ConfigPanel(QWidget):
         if not host:
             QMessageBox.warning(self, "提示", "请先填写主机地址")
             return
+
+        # 覆盖确认
+        if self._current_conn_id:
+            reply = QMessageBox.question(
+                self, "确认覆盖",
+                "确认要覆盖当前选中的连接吗？",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+            )
+            if reply != QMessageBox.Yes:
+                return
 
         # 测试前自动保存（新建连接先存到DB，已有连接更新）
         key_pwd_raw = self.key_password_input.text()
