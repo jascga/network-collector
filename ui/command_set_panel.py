@@ -43,7 +43,7 @@ class CommandSetPanel(QWidget):
         left_layout.setContentsMargins(0, 0, 0, 0)
         self.cmd_table = QTableWidget(0, 3)
         self.cmd_table.setHorizontalHeaderLabels(["名称", "厂商", "描述"])
-        self.cmd_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.cmd_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.cmd_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.cmd_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.cmd_table.setMaximumWidth(400)

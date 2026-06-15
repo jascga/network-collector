@@ -164,7 +164,7 @@ class DevicePanel(QWidget):
         self.device_table.setHorizontalHeaderLabels([
             "设备名", "IP地址", "Region", "Section", "Role", "厂商", "来源", "备注"
         ])
-        self.device_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.device_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.device_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.device_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.device_table.setContextMenuPolicy(Qt.CustomContextMenu)

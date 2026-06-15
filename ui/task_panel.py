@@ -126,7 +126,7 @@ class TaskPanel(QWidget):
         self.matched_device_table.setHorizontalHeaderLabels([
             "", "设备名", "IP", "Section", "Role", "厂商"
         ])
-        self.matched_device_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.matched_device_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.matched_device_table.setMaximumHeight(200)
         layout.addWidget(self.matched_device_table)
 
@@ -352,7 +352,7 @@ class TaskPanel(QWidget):
         self.hist_table.setHorizontalHeaderLabels([
             "任务名", "场景", "Region", "状态", "结论", "创建时间"
         ])
-        self.hist_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.hist_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.hist_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.hist_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.hist_table.doubleClicked.connect(self._on_hist_double_clicked)

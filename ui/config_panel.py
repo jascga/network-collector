@@ -208,7 +208,7 @@ class ConfigPanel(QWidget):
         edit_layout.addWidget(QLabel("<b>Expect 流程:</b>"))
         self.expect_table = QTableWidget(0, 2)
         self.expect_table.setHorizontalHeaderLabels(["看到 (expect)", "发送 (send)"])
-        self.expect_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.expect_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.expect_table.setMaximumHeight(160)
         self.expect_table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         edit_layout.addWidget(self.expect_table)
@@ -258,7 +258,7 @@ class ConfigPanel(QWidget):
 
         self.region_table = QTableWidget(0, 4)
         self.region_table.setHorizontalHeaderLabels(["Region", "Section", "SSH连接", "默认"])
-        self.region_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.region_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.region_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.region_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.region_table.setContextMenuPolicy(Qt.CustomContextMenu)

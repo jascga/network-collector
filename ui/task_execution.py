@@ -88,7 +88,7 @@ class TaskExecutionPanel(QWidget):
         self.device_table.setHorizontalHeaderLabels([
             "设备", "IP", "状态", "当前命令", "耗时"
         ])
-        self.device_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.device_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         layout.addWidget(self.device_table)
 
         # 统计
