@@ -184,7 +184,12 @@ class Database:
         current_version = current_version[0] if current_version else 0
         for ver in range(current_version + 1, SCHEMA_VERSION + 1):
             for sql in MIGRATIONS.get(ver, []):
-                self.conn.execute(sql)
+                try:
+                    self.conn.execute(sql)
+                except sqlite3.OperationalError as e:
+                    # 忽略"列已存在"等重复迁移错误
+                    if "duplicate column" not in str(e).lower():
+                        raise
         self.conn.execute("INSERT OR IGNORE INTO schema_version (version) VALUES (?)", (SCHEMA_VERSION,))
         self.conn.commit()
 
