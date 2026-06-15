@@ -272,6 +272,9 @@ class ConfigPanel(QWidget):
     # ── SSH 连接列表 ──────────────────────────────────
 
     def _refresh_connection_list(self):
+        # 保存当前选中的ID，清空选中状态（确保刷新后selectRow能触发信号）
+        prev_id = self._current_conn_id
+        self.conn_table.clearSelection()
         connections = self.db.list_ssh_connections()
         self.conn_table.setRowCount(len(connections))
         for row, conn in enumerate(connections):
@@ -296,10 +299,10 @@ class ConfigPanel(QWidget):
             self.conn_table.setItem(row, 4, status_item)
             self.conn_table.item(row, 0).setData(Qt.UserRole, conn["id"])
         self._clear_edit_form()
-        # 恢复之前选中的行（在clear之后，触发_on_conn_selected填充表单）
-        if self._current_conn_id:
+        # 恢复之前选中的行（先clearSelection确保selectRow能触发信号）
+        if prev_id:
             for row in range(self.conn_table.rowCount()):
-                if self.conn_table.item(row, 0).data(Qt.UserRole) == self._current_conn_id:
+                if self.conn_table.item(row, 0).data(Qt.UserRole) == prev_id:
                     self.conn_table.selectRow(row)
                     break
 
