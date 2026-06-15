@@ -97,9 +97,9 @@ def main():
 
     app = QApplication(sys.argv)
     app.setApplicationName("网络设备采集分析平台")
-    # 全局默认字体
+    # 全局默认字体（setPointSize 自动适配 DPI）
     font = QFont()
-    font.setPointSize(10)  # 对应 ~14px
+    font.setPointSize(10)
     app.setFont(font)
 
     # 确定数据库目录

@@ -48,15 +48,15 @@ class MainWindow(QMainWindow):
             QTreeWidget {
                 background-color: #f5f5f5;
                 border-right: 1px solid #ddd;
-                font-size: 18px;
+                font-size: 10pt;
             }
             QTreeWidget::item {
-                padding: 12px 14px;
+                padding: 10px 12px;
             }
             QTreeWidget::item:selected {
                 background-color: #0078d4;
                 color: white;
-                font-size: 18px;
+                font-size: 10pt;
             }
             QTreeWidget::item:hover:!selected {
                 background-color: #e5e5e5;
