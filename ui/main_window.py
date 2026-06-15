@@ -93,7 +93,7 @@ class MainWindow(QMainWindow):
         self.nav_tree.addTopLevelItem(config_group)
 
         nav_items = [
-            ("🌐 全局配置", "config_ssh"),
+            ("⚙ 全局配置", "config_ssh"),
             ("🖥️ 设备管理", "config_device"),
             ("📐 场景编辑", "config_scene"),
             ("⌨️ 命令集", "config_commands"),
