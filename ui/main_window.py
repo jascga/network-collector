@@ -42,21 +42,21 @@ class MainWindow(QMainWindow):
         # ── 左侧导航树 ──
         self.nav_tree = QTreeWidget()
         self.nav_tree.setHeaderHidden(True)
-        self.nav_tree.setFixedWidth(220)
-        self.nav_tree.setIndentation(16)
+        self.nav_tree.setFixedWidth(240)
+        self.nav_tree.setIndentation(20)
         self.nav_tree.setStyleSheet("""
             QTreeWidget {
                 background-color: #f5f5f5;
                 border-right: 1px solid #ddd;
-                font-size: 16px;
+                font-size: 18px;
             }
             QTreeWidget::item {
-                padding: 10px 12px;
+                padding: 12px 14px;
             }
             QTreeWidget::item:selected {
                 background-color: #0078d4;
                 color: white;
-                font-size: 16px;
+                font-size: 18px;
             }
             QTreeWidget::item:hover:!selected {
                 background-color: #e5e5e5;

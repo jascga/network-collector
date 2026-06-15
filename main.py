@@ -10,6 +10,7 @@ import os
 import argparse
 from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 
 # 确保项目根目录在 sys.path 中，方便 core 导入
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -96,6 +97,10 @@ def main():
 
     app = QApplication(sys.argv)
     app.setApplicationName("网络设备采集分析平台")
+    # 全局默认字体
+    font = QFont()
+    font.setPointSize(10)  # 对应 ~14px
+    app.setFont(font)
 
     # 确定数据库目录
     db_path = os.path.abspath(args.db)
