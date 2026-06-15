@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=64.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "network-collector"
+version = "1.0.0"
+description = "网络设备采集分析平台"
+requires-python = ">=3.8"
+dependencies = [
+    "paramiko>=3.0",
+    "cryptography>=41.0",
+    "openpyxl>=3.1",
+    "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+gui = ["PyQt5>=5.15"]
+web = ["requests>=2.28", "beautifulsoup4>=4.11"]
+browser = ["playwright>=1.40"]
+dev = ["pyyaml>=6.0", "pyinstaller>=6.0"]
+all = ["network-collector[gui,web,browser,dev]"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["core*", "collector*", "ui*"]
