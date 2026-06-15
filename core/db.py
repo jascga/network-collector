@@ -156,6 +156,14 @@ def get_default_output_dir() -> Path:
     """获取默认输出目录：用户文档目录/network-collector/tasks"""
     return Path.home() / "Documents" / "network-collector" / "tasks"
 
+
+class Database:
+    """数据库操作封装"""
+
+    def __init__(self, db_path: str):
+        self.db_path = db_path
+        self.conn: Optional[sqlite3.Connection] = None
+
     def open(self):
         """打开数据库并初始化表结构"""
         self.conn = sqlite3.connect(self.db_path)
