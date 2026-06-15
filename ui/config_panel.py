@@ -170,6 +170,7 @@ class ConfigPanel(QWidget):
         self.conn_table.setSelectionMode(QTableWidget.SingleSelection)
         self.conn_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.conn_table.selectionModel().selectionChanged.connect(self._on_conn_selected)
+        self.conn_table.itemClicked.connect(self._on_conn_selected)
         self.conn_table.setContextMenuPolicy(Qt.CustomContextMenu)
         self.conn_table.customContextMenuRequested.connect(self._on_conn_context_menu)
         ssh_layout.addWidget(self.conn_table)
@@ -295,6 +296,12 @@ class ConfigPanel(QWidget):
             self.conn_table.setItem(row, 4, status_item)
             self.conn_table.item(row, 0).setData(Qt.UserRole, conn["id"])
         self._clear_edit_form()
+        # 恢复之前选中的行（在clear之后，触发_on_conn_selected填充表单）
+        if self._current_conn_id:
+            for row in range(self.conn_table.rowCount()):
+                if self.conn_table.item(row, 0).data(Qt.UserRole) == self._current_conn_id:
+                    self.conn_table.selectRow(row)
+                    break
 
     def _on_conn_selected(self):
         rows = self.conn_table.selectionModel().selectedRows()
@@ -332,7 +339,6 @@ class ConfigPanel(QWidget):
                 self.expect_table.setItem(i, 1, QTableWidgetItem(step.get("send", "")))
 
     def _clear_edit_form(self):
-        self._current_conn_id = None
         self.name_input.clear()
         self.host_input.clear()
         self.port_spin.setValue(22)
