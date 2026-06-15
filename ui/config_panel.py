@@ -205,6 +205,11 @@ class ConfigPanel(QWidget):
         self.expect_table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         edit_layout.addWidget(self.expect_table)
 
+        # 变量提示
+        var_hint = QLabel("💡 send 中可用 <code>{device_ip}</code>，自动替换为每台设备的实际IP")
+        var_hint.setStyleSheet("color: #666; font-size: 12px; padding: 2px 0;")
+        edit_layout.addWidget(var_hint)
+
         expect_btn_layout = QHBoxLayout()
         btn_add_row = QPushButton("+ 新增行")
         btn_add_row.clicked.connect(lambda: self.expect_table.insertRow(self.expect_table.rowCount()))
