@@ -269,6 +269,35 @@ class ConfigPanel(QWidget):
 
         self.tabs.addTab(region_tab, "Region 映射")
 
+        # ── Tab 3: 全局设置 ──
+        settings_tab = QWidget()
+        settings_layout = QFormLayout(settings_tab)
+        settings_layout.setSpacing(10)
+
+        # 输出目录
+        settings_layout.addRow(QLabel("<b>输出目录设置</b>"))
+        self.output_dir_input = QLineEdit()
+        self.output_dir_input.setText(str(self.db.get_output_dir()))
+        self.output_dir_input.setPlaceholderText("留空则使用默认路径")
+        settings_layout.addRow("采集结果目录:", self.output_dir_input)
+
+        btn_browse = QPushButton("浏览...")
+        btn_browse.clicked.connect(self._browse_output_dir)
+        settings_layout.addRow("", btn_browse)
+
+        btn_save_settings = QPushButton("保存设置")
+        btn_save_settings.setStyleSheet("QPushButton { padding: 6px 24px; }")
+        btn_save_settings.clicked.connect(self._save_settings)
+        settings_layout.addRow("", btn_save_settings)
+
+        settings_layout.addRow(QLabel(
+            "默认路径: ~/Documents/network-collector/tasks/\n"
+            "修改后新建的任务将使用新路径，已有任务不受影响。"
+        ))
+        settings_layout.addRow(QLabel(""))
+
+        self.tabs.addTab(settings_tab, "⚙ 设置")
+
     # ── SSH 连接列表 ──────────────────────────────────
 
     def _refresh_connection_list(self):
@@ -539,6 +568,21 @@ class ConfigPanel(QWidget):
             # 加载数据到对话框
             # 这里简化为重新添加，实际项目可扩展
             pass
+
+    # ── 全局设置 ──────────────────────────────────────
+
+    def _browse_output_dir(self):
+        path = QFileDialog.getExistingDirectory(self, "选择输出目录")
+        if path:
+            self.output_dir_input.setText(path)
+
+    def _save_settings(self):
+        path = self.output_dir_input.text().strip()
+        if path:
+            self.db.set_config("output_dir", path)
+        else:
+            self.db.set_config("output_dir", "")
+        QMessageBox.information(self, "提示", "设置已保存\n新建任务将使用新路径。")
 
     # ── 导入导出 ──────────────────────────────────────
 

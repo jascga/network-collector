@@ -141,6 +141,11 @@ class TaskPanel(QWidget):
         self.timeout_spin.setValue(60)
         self.timeout_spin.setSuffix(" 秒/设备")
         task_cfg_layout.addRow("采集超时:", self.timeout_spin)
+        # 输出目录（只读显示）
+        output_path = str(self.db.get_output_dir())
+        self.output_dir_label = QLabel(output_path)
+        self.output_dir_label.setStyleSheet("color: #666; font-size: 13px;")
+        task_cfg_layout.addRow("输出目录:", self.output_dir_label)
         layout.addWidget(task_cfg)
 
         # 按钮
