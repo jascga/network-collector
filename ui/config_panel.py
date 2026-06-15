@@ -420,9 +420,20 @@ class ConfigPanel(QWidget):
         self.tester = SSHTester(config, key_pwd)
         self.tester.finished.connect(self._on_test_finished)
         self.tester.start()
-        QMessageBox.information(self, "提示", "正在测试连接，请稍候...")
+        # 先更新状态列为"测试中"
+        if self._current_conn_id:
+            self.db.update_ssh_status(self._current_conn_id, "testing")
+            self._refresh_connection_list()
+        # 用状态栏提示，不弹模态框
+        parent = self.window() if hasattr(self, 'window') else self
+        if hasattr(parent, 'statusBar'):
+            parent.statusBar().showMessage("⏳ 正在测试连接...", 0)
 
     def _on_test_finished(self, success: bool, message: str):
+        # 清除状态栏提示
+        parent = self.window() if hasattr(self, 'window') else self
+        if hasattr(parent, 'statusBar'):
+            parent.statusBar().clearMessage()
         # 更新状态到数据库和列表
         status = "ok" if success else "failed"
         if self._current_conn_id:
