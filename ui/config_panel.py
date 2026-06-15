@@ -294,12 +294,6 @@ class ConfigPanel(QWidget):
                 status_item.setForeground(QColor("#dc2626"))
             self.conn_table.setItem(row, 4, status_item)
             self.conn_table.item(row, 0).setData(Qt.UserRole, conn["id"])
-        # 重新绑定行选中信号（setRowCount后selectionModel可能重建）
-        try:
-            self.conn_table.selectionModel().selectionChanged.disconnect(self._on_conn_selected)
-        except TypeError:
-            pass
-        self.conn_table.selectionModel().selectionChanged.connect(self._on_conn_selected)
         self._clear_edit_form()
 
     def _on_conn_selected(self):
@@ -457,10 +451,20 @@ class ConfigPanel(QWidget):
         parent = self.window()
         if hasattr(parent, 'statusBar'):
             parent.statusBar().clearMessage()
+        # 从当前选中行获取连接ID（_current_conn_id可能已被clear掉）
+        conn_id = None
+        rows = self.conn_table.selectionModel().selectedRows()
+        if rows:
+            row = rows[0].row()
+            item = self.conn_table.item(row, 0)
+            if item:
+                conn_id = item.data(Qt.UserRole)
+        else:
+            conn_id = self._current_conn_id
         # 更新状态到数据库和列表
         status = "ok" if success else "failed"
-        if self._current_conn_id:
-            self.db.update_ssh_status(self._current_conn_id, status)
+        if conn_id:
+            self.db.update_ssh_status(conn_id, status)
             self._refresh_connection_list()
         if success:
             QMessageBox.information(self, "连接测试", f"✅ 连接成功！\n{message}")
