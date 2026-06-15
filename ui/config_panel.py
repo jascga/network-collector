@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import (
     QFileDialog, QInputDialog, QMenu,
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QThread
+from PyQt5.QtGui import QColor
 from core.db import Database
 from core.crypto import encrypt, decrypt
 from core.expect_engine import SSHExpectSession
@@ -277,7 +278,21 @@ class ConfigPanel(QWidget):
             self.conn_table.setItem(row, 1, QTableWidgetItem(conn.get("host", "")))
             self.conn_table.setItem(row, 2, QTableWidgetItem(str(conn.get("port", 22))))
             self.conn_table.setItem(row, 3, QTableWidgetItem(conn.get("username", "")))
-            self.conn_table.setItem(row, 4, QTableWidgetItem("—"))
+            # 状态列
+            status = conn.get("status", "untested")
+            status_map = {
+                "ok": "✅ 正常",
+                "failed": "❌ 失败",
+                "testing": "⏳ 测试中",
+                "untested": "—",
+            }
+            status_text = status_map.get(status, "—")
+            status_item = QTableWidgetItem(status_text)
+            if status == "ok":
+                status_item.setForeground(QColor("#16a34a"))
+            elif status == "failed":
+                status_item.setForeground(QColor("#dc2626"))
+            self.conn_table.setItem(row, 4, status_item)
             self.conn_table.item(row, 0).setData(Qt.UserRole, conn["id"])
         self._clear_edit_form()
 
@@ -408,10 +423,15 @@ class ConfigPanel(QWidget):
         QMessageBox.information(self, "提示", "正在测试连接，请稍候...")
 
     def _on_test_finished(self, success: bool, message: str):
+        # 更新状态到数据库和列表
+        status = "ok" if success else "failed"
+        if self._current_conn_id:
+            self.db.update_ssh_status(self._current_conn_id, status)
+            self._refresh_connection_list()
         if success:
-            QMessageBox.information(self, "连接测试", f"✓ 连接成功！\n{message}")
+            QMessageBox.information(self, "连接测试", f"✅ 连接成功！\n{message}")
         else:
-            QMessageBox.warning(self, "连接测试", f"✗ 连接失败：\n{message}")
+            QMessageBox.warning(self, "连接测试", f"❌ 连接失败：\n{message}")
 
     # ── Region 映射 ───────────────────────────────────
 

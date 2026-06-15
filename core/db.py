@@ -13,7 +13,15 @@ from typing import Optional
 
 # ── 数据库初始化 ──────────────────────────────────────
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+
+MIGRATIONS = {
+    2: [
+        # v2: SSH连接表增加状态字段
+        "ALTER TABLE ssh_connections ADD COLUMN status TEXT DEFAULT 'untested'",
+        "ALTER TABLE ssh_connections ADD COLUMN last_test_at TEXT",
+    ],
+}
 
 CREATE_TABLES = [
     # SSH连接
@@ -145,6 +153,12 @@ class Database:
     def _init_tables(self):
         for sql in CREATE_TABLES:
             self.conn.execute(sql)
+        # 迁移
+        current_version = self.conn.execute("SELECT version FROM schema_version").fetchone()
+        current_version = current_version[0] if current_version else 0
+        for ver in range(current_version + 1, SCHEMA_VERSION + 1):
+            for sql in MIGRATIONS.get(ver, []):
+                self.conn.execute(sql)
         self.conn.execute("INSERT OR IGNORE INTO schema_version (version) VALUES (?)", (SCHEMA_VERSION,))
         self.conn.commit()
 
@@ -185,6 +199,15 @@ class Database:
 
     def delete_ssh_connection(self, conn_id: int):
         self.conn.execute("DELETE FROM ssh_connections WHERE id=?", (conn_id,))
+        self.conn.commit()
+
+    def update_ssh_status(self, conn_id: int, status: str):
+        """更新SSH连接测试状态：untested/ok/failed"""
+        now = datetime.datetime.now().isoformat()
+        self.conn.execute(
+            "UPDATE ssh_connections SET status=?, last_test_at=? WHERE id=?",
+            (status, now, conn_id),
+        )
         self.conn.commit()
 
     # ── Region 映射 ───────────────────────────────────
