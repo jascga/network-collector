@@ -22,6 +22,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 
 from .expect_engine import SSHExpectSession, VariableResolver
+from .db import get_default_output_dir
 
 logger = logging.getLogger("collector")
 
@@ -248,9 +249,9 @@ class DeviceCollector:
 class Collector:
     """采集引擎主类"""
 
-    def __init__(self, db, output_base: str = "tasks"):
+    def __init__(self, db, output_base: str = None):
         self.db = db
-        self.output_base = Path(output_base)
+        self.output_base = Path(output_base) if output_base else db.get_output_dir()
         self._cancel_flags: dict[int, bool] = {}
         self._active_threads: dict[int, threading.Thread] = {}
 

@@ -141,7 +141,7 @@ class ResultPanel(QWidget):
         self.issue_tree.clear()
 
         # 尝试从文件加载详细结果
-        task_dir = f"tasks/task_{task_id:04d}"
+        task_dir = str(self.db.get_task_path(task_id))
         summary_path = os.path.join(task_dir, "summary.json")
         if os.path.exists(summary_path):
             with open(summary_path, "r", encoding="utf-8") as f:
@@ -254,7 +254,7 @@ class ResultPanel(QWidget):
             f.write(f"创建时间: {task.get('created_at','')}\n")
             f.write("=" * 60 + "\n\n")
             # 采集结果
-            task_dir = f"tasks/task_{self._task_id:04d}"
+            task_dir = str(self.db.get_task_path(self._task_id))
             summary_path = os.path.join(task_dir, "summary.json")
             if os.path.exists(summary_path):
                 with open(summary_path, "r", encoding="utf-8") as sf:
@@ -274,7 +274,7 @@ class ResultPanel(QWidget):
         with open(path, "w", encoding="utf-8-sig", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["设备IP", "设备名", "状态", "命令", "成功", "输出大小"])
-            task_dir = f"tasks/task_{self._task_id:04d}"
+            task_dir = str(self.db.get_task_path(self._task_id))
             summary_path = os.path.join(task_dir, "summary.json")
             if os.path.exists(summary_path):
                 with open(summary_path, "r", encoding="utf-8") as sf:
@@ -302,7 +302,7 @@ body {{ font-family: sans-serif; margin: 20px; }}
 <p>场景: {task.get('scene_template_id','')} | Region: {task.get('region','')} | 状态: {task.get('status','')}</p>
 <p>创建: {task.get('created_at','')}</p>
 """
-        task_dir = f"tasks/task_{self._task_id:04d}"
+        task_dir = str(self.db.get_task_path(self._task_id))
         summary_path = os.path.join(task_dir, "summary.json")
         if os.path.exists(summary_path):
             with open(summary_path, "r", encoding="utf-8") as sf:

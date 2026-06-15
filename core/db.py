@@ -124,19 +124,37 @@ CREATE_TABLES = [
     """CREATE TABLE IF NOT EXISTS schema_version (
         version INTEGER PRIMARY KEY
     )""",
+
+    # 配置项
+    """CREATE TABLE IF NOT EXISTS config (
+        key TEXT PRIMARY KEY,
+        value TEXT
+    )""",
 ]
 
 INSERT_DEFAULTS = [
     """INSERT OR IGNORE INTO schema_version (version) VALUES (?)""",
+    """INSERT OR IGNORE INTO config (key, value) VALUES ('output_dir', '')""",
 ]
 
 
-class Database:
-    """数据库操作封装"""
+SCHEMA_VERSION = 3
 
-    def __init__(self, db_path: str):
-        self.db_path = db_path
-        self.conn: Optional[sqlite3.Connection] = None
+MIGRATIONS = {
+    2: [
+        "ALTER TABLE ssh_connections ADD COLUMN status TEXT DEFAULT 'untested'",
+        "ALTER TABLE ssh_connections ADD COLUMN last_test_at TEXT",
+    ],
+    3: [
+        "CREATE TABLE IF NOT EXISTS config (key TEXT PRIMARY KEY, value TEXT)",
+        "INSERT OR IGNORE INTO config (key, value) VALUES ('output_dir', '')",
+    ],
+}
+
+
+def get_default_output_dir() -> Path:
+    """获取默认输出目录：用户文档目录/network-collector/tasks"""
+    return Path.home() / "Documents" / "network-collector" / "tasks"
 
     def open(self):
         """打开数据库并初始化表结构"""
@@ -209,6 +227,27 @@ class Database:
             (status, now, conn_id),
         )
         self.conn.commit()
+
+    # ── 配置项 ────────────────────────────────────────
+
+    def get_config(self, key: str, default: str = "") -> str:
+        r = self.conn.execute("SELECT value FROM config WHERE key=?", (key,)).fetchone()
+        return r[0] if r else default
+
+    def set_config(self, key: str, value: str):
+        self.conn.execute("INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)", (key, value))
+        self.conn.commit()
+
+    def get_output_dir(self) -> Path:
+        """获取输出目录，优先用自定义路径，否则用默认"""
+        custom = self.get_config("output_dir")
+        if custom:
+            return Path(custom)
+        return get_default_output_dir()
+
+    def get_task_path(self, task_id: int) -> Path:
+        """获取任务输出路径"""
+        return self.get_output_dir() / f"task_{task_id:04d}"
 
     # ── Region 映射 ───────────────────────────────────
 

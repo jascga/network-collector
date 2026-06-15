@@ -21,7 +21,7 @@ class CollectThread(QThread):
     finished = pyqtSignal(int, dict, str)  # task_id, summary, status
     error = pyqtSignal(str)
 
-    def __init__(self, db, task_id: int, output_base: str = "tasks"):
+    def __init__(self, db, task_id: int, output_base: str = None):
         super().__init__()
         self.db = db
         self.task_id = task_id
