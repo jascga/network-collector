@@ -130,6 +130,14 @@ CREATE_TABLES = [
         key TEXT PRIMARY KEY,
         value TEXT
     )""",
+
+    # 角色
+    """CREATE TABLE IF NOT EXISTS roles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        sort_order INTEGER DEFAULT 0,
+        created_at TEXT
+    )""",
 ]
 
 INSERT_DEFAULTS = [
@@ -138,7 +146,7 @@ INSERT_DEFAULTS = [
 ]
 
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 MIGRATIONS = {
     2: [
@@ -148,6 +156,14 @@ MIGRATIONS = {
     3: [
         "CREATE TABLE IF NOT EXISTS config (key TEXT PRIMARY KEY, value TEXT)",
         "INSERT OR IGNORE INTO config (key, value) VALUES ('output_dir', '')",
+    ],
+    4: [
+        "CREATE TABLE IF NOT EXISTS roles (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL, sort_order INTEGER DEFAULT 0, created_at TEXT)",
+        "INSERT OR IGNORE INTO roles (name, sort_order) VALUES ('fa', 1)",
+        "INSERT OR IGNORE INTO roles (name, sort_order) VALUES ('cnt', 2)",
+        "INSERT OR IGNORE INTO roles (name, sort_order) VALUES ('dcc', 3)",
+        "INSERT OR IGNORE INTO roles (name, sort_order) VALUES ('dsw', 4)",
+        "INSERT OR IGNORE INTO roles (name, sort_order) VALUES ('tor', 5)",
     ],
 }
 
@@ -450,6 +466,37 @@ class Database:
     def get_task(self, task_id: int) -> Optional[dict]:
         r = self.conn.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
         return dict(r) if r else None
+
+    # ── 角色 ──────────────────────────────────────────
+
+    def list_roles(self) -> list:
+        """获取所有角色，按 sort_order 排序"""
+        rows = self.conn.execute("SELECT * FROM roles ORDER BY sort_order").fetchall()
+        return [dict(r) for r in rows]
+
+    def save_role(self, name: str, sort_order: int = 0) -> int:
+        """新增角色"""
+        import datetime
+        now = datetime.datetime.now().isoformat()
+        cur = self.conn.execute(
+            "INSERT INTO roles (name, sort_order, created_at) VALUES (?, ?, ?)",
+            (name, sort_order, now),
+        )
+        self.conn.commit()
+        return cur.lastrowid
+
+    def update_role(self, role_id: int, name: str, sort_order: int = 0):
+        """更新角色"""
+        self.conn.execute(
+            "UPDATE roles SET name=?, sort_order=? WHERE id=?",
+            (name, sort_order, role_id),
+        )
+        self.conn.commit()
+
+    def delete_role(self, role_id: int):
+        """删除角色"""
+        self.conn.execute("DELETE FROM roles WHERE id=?", (role_id,))
+        self.conn.commit()
 
     # ── 命令集 ────────────────────────────────────────
 

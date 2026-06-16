@@ -21,8 +21,9 @@ except ImportError:
 class AddDeviceDialog(QDialog):
     """手工添加设备对话框"""
 
-    def __init__(self, device: dict = None):
+    def __init__(self, db, device: dict = None):
         super().__init__()
+        self.db = db
         self.device = device or {}
         self._init_ui()
         if device:
@@ -51,7 +52,7 @@ class AddDeviceDialog(QDialog):
 
         self.role_combo = QComboBox()
         self.role_combo.setEditable(True)
-        self.role_combo.addItems(["core", "access", "distribution", "fw", "ext"])
+        self._load_roles()
         layout.addRow("角色:", self.role_combo)
 
         self.vendor_combo = QComboBox()
@@ -80,6 +81,15 @@ class AddDeviceDialog(QDialog):
         idx = self.vendor_combo.findText(self.device.get("vendor", ""))
         if idx >= 0:
             self.vendor_combo.setCurrentIndex(idx)
+
+    def _load_roles(self):
+        """从数据库加载角色列表"""
+        try:
+            roles = self.db.list_roles()
+            for r in roles:
+                self.role_combo.addItem(r["name"])
+        except Exception:
+            self.role_combo.addItems(["fa", "cnt", "dcc", "dsw", "tor"])
 
     def _on_save(self):
         hostname = self.hostname_input.text().strip()
@@ -131,7 +141,7 @@ class DevicePanel(QWidget):
 
         filter_layout.addWidget(QLabel("角色:"))
         self.role_filter = QComboBox()
-        self.role_filter.addItems(["全部", "core", "access", "distribution", "fw", "ext"])
+        self.role_filter.addItem("全部", "")
         filter_layout.addWidget(self.role_filter)
 
         filter_layout.addWidget(QLabel("搜索:"))
@@ -185,10 +195,27 @@ class DevicePanel(QWidget):
         bottom.addStretch()
         layout.addLayout(bottom)
 
+    def _load_role_filter(self):
+        """加载角色到筛选下拉框"""
+        role = self.role_filter.currentText()
+        self.role_filter.clear()
+        self.role_filter.addItem("全部", "")
+        try:
+            roles = self.db.list_roles()
+            for r in roles:
+                self.role_filter.addItem(r["name"], r["name"])
+        except Exception:
+            for n in ["fa", "cnt", "dcc", "dsw", "tor"]:
+                self.role_filter.addItem(n, n)
+        idx = self.role_filter.findText(role)
+        if idx >= 0:
+            self.role_filter.setCurrentIndex(idx)
+
     # ── 数据加载 ──────────────────────────────────────
 
     def on_activated(self, params=None):
         self._load_regions()
+        self._load_role_filter()
         self._on_search()
 
     def _load_regions(self):
@@ -256,7 +283,7 @@ class DevicePanel(QWidget):
     # ── 设备操作 ──────────────────────────────────────
 
     def _add_device(self):
-        dialog = AddDeviceDialog()
+        dialog = AddDeviceDialog(self.db)
         if dialog.exec_() == QDialog.Accepted:
             self.db.add_device(dialog.device)
             self._on_search()
@@ -274,7 +301,7 @@ class DevicePanel(QWidget):
         if not device:
             return
         device_dict = dict(device)
-        dialog = AddDeviceDialog(device_dict)
+        dialog = AddDeviceDialog(self.db, device_dict)
         if dialog.exec_() == QDialog.Accepted:
             self.db.update_device(device_id, dialog.device)
             self._on_search()

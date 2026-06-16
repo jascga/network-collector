@@ -483,9 +483,10 @@ class DeviceGroupDialog(QDialog):
         self.section_input.setPlaceholderText("如: az* / transit* / *")
         layout.addRow("网络分区:", self.section_input)
 
-        self.role_input = QLineEdit()
-        self.role_input.setPlaceholderText("如: core / access / distribution / fw")
-        layout.addRow("角色:", self.role_input)
+        self.role_combo = QComboBox()
+        self.role_combo.setEditable(True)
+        self._load_roles()
+        layout.addRow("角色:", self.role_combo)
 
         self.desc_input = QLineEdit()
         layout.addRow("说明:", self.desc_input)
@@ -504,6 +505,15 @@ class DeviceGroupDialog(QDialog):
         btn_box.rejected.connect(self.reject)
         layout.addRow(btn_box)
 
+    def _load_roles(self):
+        try:
+            roles = self.db.list_roles()
+            for r in roles:
+                self.role_combo.addItem(r["name"])
+        except Exception:
+            for n in ["fa", "cnt", "dcc", "dsw", "tor"]:
+                self.role_combo.addItem(n)
+
     def _on_ok(self):
         cmd_ids = []
         for i in range(self.cmd_list.count()):
@@ -512,7 +522,7 @@ class DeviceGroupDialog(QDialog):
                 cmd_ids.append(item.data(Qt.UserRole))
         self.result = {
             "section": self.section_input.text().strip(),
-            "role": self.role_input.text().strip(),
+            "role": self.role_combo.currentText().strip(),
             "desc": self.desc_input.text().strip(),
             "command_set_ids": cmd_ids,
         }

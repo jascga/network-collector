@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (
     QFileDialog, QInputDialog, QMenu,
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QThread
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QFont
 from core.db import Database
 from core.crypto import encrypt, decrypt
 from core.expect_engine import SSHExpectSession
@@ -295,6 +295,32 @@ class ConfigPanel(QWidget):
             "修改后新建的任务将使用新路径，已有任务不受影响。"
         ))
         settings_layout.addRow(QLabel(""))
+
+        # ── 角色管理 ──
+        settings_layout.addRow(QLabel(""))
+        settings_layout.addRow(QLabel("<b>角色管理</b>"))
+        settings_layout.addRow(QLabel("定义设备可用的角色，修改后设备管理页下拉框自动更新。"))
+
+        role_btn_layout = QHBoxLayout()
+        btn_add_role = QPushButton("+ 新增角色")
+        btn_add_role.clicked.connect(self._add_role)
+        role_btn_layout.addWidget(btn_add_role)
+        btn_del_role = QPushButton("- 删除选中")
+        btn_del_role.clicked.connect(self._delete_role)
+        role_btn_layout.addWidget(btn_del_role)
+        role_btn_layout.addStretch()
+        settings_layout.addRow(role_btn_layout)
+
+        self.role_table = QTableWidget(0, 3)
+        self.role_table.setHorizontalHeaderLabels(["排序", "角色名", "操作"])
+        self.role_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.role_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.role_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.role_table.verticalHeader().setVisible(False)
+        self.role_table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.role_table.setEditTriggers(QTableWidget.AllEditTriggers)
+        self.role_table.cellChanged.connect(self._on_role_cell_changed)
+        settings_layout.addRow(self.role_table)
 
         self.tabs.addTab(settings_tab, "⚙ 设置")
 
@@ -609,3 +635,80 @@ class ConfigPanel(QWidget):
         """页面被激活时刷新"""
         self._refresh_connection_list()
         self._refresh_region_table()
+        self._refresh_role_table()
+
+    # ── 角色管理 ──────────────────────────────────────
+
+    def _refresh_role_table(self):
+        self.role_table.blockSignals(True)
+        roles = self.db.list_roles()
+        self.role_table.setRowCount(len(roles))
+        for row, r in enumerate(roles):
+            order_item = QTableWidgetItem(str(r.get("sort_order", 0)))
+            order_item.setData(Qt.UserRole, r["id"])
+            self.role_table.setItem(row, 0, order_item)
+
+            name_item = QTableWidgetItem(r.get("name", ""))
+            self.role_table.setItem(row, 1, name_item)
+
+            btn_del = QPushButton("删除")
+            btn_del.setStyleSheet("QPushButton { color: #dc2626; padding: 2px 12px; }")
+            btn_del.clicked.connect(lambda _, rid=r["id"]: self._delete_role_by_id(rid))
+            self.role_table.setCellWidget(row, 2, btn_del)
+        self.role_table.blockSignals(False)
+
+    def _on_role_cell_changed(self, row, col):
+        """角色表内编辑后自动保存"""
+        item = self.role_table.item(row, 0)
+        if not item:
+            return
+        role_id = item.data(Qt.UserRole)
+        if not role_id:
+            return  # 新增行还未保存
+        name = self.role_table.item(row, 1).text().strip() if self.role_table.item(row, 1) else ""
+        sort_text = self.role_table.item(row, 0).text().strip()
+        sort_order = int(sort_text) if sort_text.isdigit() else 0
+        try:
+            self.db.update_role(role_id, name, sort_order)
+        except Exception as e:
+            QMessageBox.warning(self, "保存失败", str(e))
+            self._refresh_role_table()
+
+    def _add_role(self):
+        self.role_table.blockSignals(True)
+        row = self.role_table.rowCount()
+        self.role_table.insertRow(row)
+        order_item = QTableWidgetItem("99")
+        order_item.setData(Qt.UserRole, None)
+        self.role_table.setItem(row, 0, order_item)
+        name_item = QTableWidgetItem("新角色")
+        self.role_table.setItem(row, 1, name_item)
+        btn_del = QPushButton("删除")
+        btn_del.setStyleSheet("QPushButton { color: #dc2626; padding: 2px 12px; }")
+        btn_del.clicked.connect(lambda: self._delete_empty_row(row))
+        self.role_table.setCellWidget(row, 2, btn_del)
+        self.role_table.blockSignals(False)
+        self.role_table.editItem(name_item)
+
+    def _delete_role_by_id(self, role_id: int):
+        ret = QMessageBox.question(self, "确认删除", "确定要删除此角色吗？",
+                                   QMessageBox.Yes | QMessageBox.No)
+        if ret == QMessageBox.Yes:
+            try:
+                self.db.delete_role(role_id)
+                self._refresh_role_table()
+            except Exception as e:
+                QMessageBox.warning(self, "删除失败", str(e))
+
+    def _delete_role(self):
+        row = self.role_table.currentRow()
+        if row < 0:
+            return
+        item = self.role_table.item(row, 0)
+        if item and item.data(Qt.UserRole):
+            self._delete_role_by_id(item.data(Qt.UserRole))
+        else:
+            self.role_table.removeRow(row)
+
+    def _delete_empty_row(self, row: int):
+        self.role_table.removeRow(row)
