@@ -64,7 +64,6 @@ class RegionMappingDialog(QDialog):
 
     def _init_ui(self):
         self.setWindowTitle("编辑 Region 映射")
-        self.setFixedSize(450, 250)
         layout = QFormLayout(self)
 
         self.region_input = QLineEdit()
@@ -86,6 +85,8 @@ class RegionMappingDialog(QDialog):
         btn_box.accepted.connect(self._on_save)
         btn_box.rejected.connect(self.reject)
         layout.addRow(btn_box)
+
+        self.adjustSize()
 
     def _load_ssh_list(self):
         self.ssh_combo.clear()

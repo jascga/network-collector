@@ -31,7 +31,6 @@ class AddDeviceDialog(QDialog):
 
     def _init_ui(self):
         self.setWindowTitle("添加设备" if not self.device else "编辑设备")
-        self.setFixedSize(400, 350)
         layout = QFormLayout(self)
 
         self.hostname_input = QLineEdit()
@@ -67,6 +66,8 @@ class AddDeviceDialog(QDialog):
         btn_box.accepted.connect(self._on_save)
         btn_box.rejected.connect(self.reject)
         layout.addRow(btn_box)
+
+        self.adjustSize()
 
     def _load_data(self):
         self.hostname_input.setText(self.device.get("hostname", ""))

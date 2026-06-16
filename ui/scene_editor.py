@@ -476,7 +476,6 @@ class DeviceGroupDialog(QDialog):
 
     def _init_ui(self):
         self.setWindowTitle("添加设备组")
-        self.setFixedSize(400, 250)
         layout = QFormLayout(self)
 
         self.section_input = QLineEdit()
@@ -504,6 +503,8 @@ class DeviceGroupDialog(QDialog):
         btn_box.accepted.connect(self._on_ok)
         btn_box.rejected.connect(self.reject)
         layout.addRow(btn_box)
+
+        self.adjustSize()
 
     def _load_roles(self):
         try:
@@ -540,7 +541,6 @@ class SubSceneDialog(QDialog):
 
     def _init_ui(self):
         self.setWindowTitle("添加子场景")
-        self.setFixedSize(450, 300)
         layout = QVBoxLayout(self)
 
         form = QFormLayout()
@@ -570,6 +570,8 @@ class SubSceneDialog(QDialog):
         btn_box.accepted.connect(self._on_ok)
         btn_box.rejected.connect(self.reject)
         layout.addWidget(btn_box)
+
+        self.adjustSize()
 
     def _on_ok(self):
         dgs = []
