@@ -6,9 +6,9 @@ command_set_panel.py — 命令集管理
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
     QPushButton, QLabel, QLineEdit, QComboBox, QHeaderView, QGroupBox,
-    QFormLayout, QMessageBox, QMenu, QTextEdit,
+    QFormLayout, QMessageBox, QMenu, QTextEdit, QSplitter,
 )
-from PyQt5.QtCore import Qt, QSplitter
+from PyQt5.QtCore import Qt
 import json
 
 
