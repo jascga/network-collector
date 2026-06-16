@@ -16,3 +16,6 @@ tasks/
 # IDE
 .vscode/
 .idea/
+
+# Virtual environment
+.venv/
