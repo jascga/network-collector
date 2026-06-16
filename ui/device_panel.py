@@ -151,6 +151,8 @@ class DevicePanel(QWidget):
         self.section_filter.addItem("全部", "")
         filter_layout.addWidget(self.section_filter)
 
+        self.region_filter.currentIndexChanged.connect(self._on_region_changed)
+
         filter_layout.addWidget(QLabel("角色:"))
         self.role_filter = QComboBox()
         self.role_filter.addItem("全部", "")
@@ -207,6 +209,33 @@ class DevicePanel(QWidget):
         bottom.addStretch()
         layout.addLayout(bottom)
 
+    def _load_sections(self):
+        """加载网络分区到筛选下拉框，按当前Region筛选"""
+        section_text = self.section_filter.currentText()
+        self.section_filter.blockSignals(True)
+        self.section_filter.clear()
+        self.section_filter.addItem("全部", "")
+        region = self.region_filter.currentData() or None
+        try:
+            sql = "SELECT DISTINCT section FROM devices WHERE is_active=1"
+            params = []
+            if region:
+                sql += " AND region=?"
+                params.append(region)
+            sql += " ORDER BY section"
+            rows = self.db.conn.execute(sql, params).fetchall()
+            for r in rows:
+                self.section_filter.addItem(r["section"], r["section"])
+        except Exception:
+            pass
+        idx = self.section_filter.findText(section_text)
+        if idx >= 0:
+            self.section_filter.setCurrentIndex(idx)
+        self.section_filter.blockSignals(False)
+
+    def _on_region_changed(self):
+        self._load_sections()
+
     def _load_role_filter(self):
         """加载角色到筛选下拉框"""
         role = self.role_filter.currentText()
@@ -227,6 +256,7 @@ class DevicePanel(QWidget):
 
     def on_activated(self, params=None):
         self._load_regions()
+        self._load_sections()
         self._load_role_filter()
         self._on_search()
 
