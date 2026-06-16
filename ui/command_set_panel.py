@@ -61,7 +61,7 @@ class CommandSetPanel(QWidget):
         self.name_input = QLineEdit()
         form.addRow("名称:", self.name_input)
         self.vendor_combo = QComboBox()
-        self.vendor_combo.addItems(["通用", "VendorA", "VendorB"])
+        self._load_vendors()
         form.addRow("厂商:", self.vendor_combo)
         self.desc_input = QLineEdit()
         form.addRow("描述:", self.desc_input)
@@ -88,6 +88,18 @@ class CommandSetPanel(QWidget):
         layout.addWidget(splitter)
 
     # ── 数据加载 ──────────────────────────────────────
+
+    def _load_vendors(self):
+        """从设备表加载已有厂商列表"""
+        self.vendor_combo.addItem("通用")
+        try:
+            vendors = self.db.conn.execute(
+                "SELECT DISTINCT vendor FROM devices WHERE vendor != '' ORDER BY vendor"
+            ).fetchall()
+            for v in vendors:
+                self.vendor_combo.addItem(v["vendor"])
+        except Exception:
+            pass
 
     def on_activated(self, params=None):
         self._refresh_list()
