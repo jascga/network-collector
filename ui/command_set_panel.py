@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
     QPushButton, QLabel, QLineEdit, QComboBox, QHeaderView, QGroupBox,
     QFormLayout, QMessageBox, QMenu, QTextEdit,
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSplitter
 import json
 
 
@@ -34,8 +34,8 @@ class CommandSetPanel(QWidget):
         top.addWidget(btn_new)
         layout.addLayout(top)
 
-        # 左右分栏
-        h_layout = QHBoxLayout()
+        # 左右分栏（可拖拽）
+        splitter = QSplitter(Qt.Horizontal)
 
         # 左侧：列表
         left_widget = QWidget()
@@ -44,14 +44,14 @@ class CommandSetPanel(QWidget):
         self.cmd_table = QTableWidget(0, 3)
         self.cmd_table.setHorizontalHeaderLabels(["名称", "厂商", "描述"])
         self.cmd_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+        self.cmd_table.setMinimumWidth(200)
         self.cmd_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.cmd_table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.cmd_table.setMaximumWidth(400)
         self.cmd_table.selectionModel().selectionChanged.connect(self._on_selected)
         self.cmd_table.setContextMenuPolicy(Qt.CustomContextMenu)
         self.cmd_table.customContextMenuRequested.connect(self._on_context_menu)
         left_layout.addWidget(self.cmd_table)
-        h_layout.addWidget(left_widget)
+        splitter.addWidget(left_widget)
 
         # 右侧：编辑表单
         right = QGroupBox("编辑命令集")
@@ -84,8 +84,8 @@ class CommandSetPanel(QWidget):
         btn_save.setStyleSheet("QPushButton { padding: 6px 24px; }")
         right_layout.addWidget(btn_save, alignment=Qt.AlignRight)
 
-        h_layout.addWidget(right, 1)
-        layout.addLayout(h_layout)
+        splitter.addWidget(right)
+        layout.addWidget(splitter)
 
     # ── 数据加载 ──────────────────────────────────────
 

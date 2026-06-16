@@ -54,7 +54,10 @@ class SceneEditor(QWidget):
         self._init_ui()
 
     def _init_ui(self):
-        layout = QHBoxLayout(self)
+        splitter = QSplitter(Qt.Horizontal, self)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(splitter)
 
         # ── 左侧：场景列表 ──
         left = QWidget()
@@ -72,12 +75,12 @@ class SceneEditor(QWidget):
         self.scene_tree = QTreeWidget()
         self.scene_tree.setHeaderLabels(["名称", "类型"])
         self.scene_tree.setRootIsDecorated(True)
-        self.scene_tree.setMaximumWidth(300)
+        self.scene_tree.setMinimumWidth(200)
         self.scene_tree.itemClicked.connect(self._on_scene_clicked)
         self.scene_tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.scene_tree.customContextMenuRequested.connect(self._on_scene_context_menu)
         left_layout.addWidget(self.scene_tree)
-        layout.addWidget(left)
+        splitter.addWidget(left)
 
         # ── 右侧：编辑区 ──
         right = QWidget()
@@ -198,7 +201,7 @@ class SceneEditor(QWidget):
         )
         right_layout.addWidget(btn_save, alignment=Qt.AlignRight)
 
-        layout.addWidget(right, 1)
+        splitter.addWidget(right)
 
     # ── 数据加载 ──────────────────────────────────────
 
