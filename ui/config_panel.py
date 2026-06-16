@@ -675,20 +675,19 @@ class ConfigPanel(QWidget):
             self._refresh_role_table()
 
     def _add_role(self):
-        self.role_table.blockSignals(True)
-        row = self.role_table.rowCount()
-        self.role_table.insertRow(row)
-        order_item = QTableWidgetItem("99")
-        order_item.setData(Qt.UserRole, None)
-        self.role_table.setItem(row, 0, order_item)
-        name_item = QTableWidgetItem("新角色")
-        self.role_table.setItem(row, 1, name_item)
-        btn_del = QPushButton("删除")
-        btn_del.setStyleSheet("QPushButton { color: #dc2626; padding: 2px 12px; }")
-        btn_del.clicked.connect(lambda: self._delete_empty_row(row))
-        self.role_table.setCellWidget(row, 2, btn_del)
-        self.role_table.blockSignals(False)
-        self.role_table.editItem(name_item)
+        # 先写入 DB
+        roles = self.db.list_roles()
+        max_order = max((r.get("sort_order", 0) for r in roles), default=0)
+        new_id = self.db.save_role("新角色", max_order + 1)
+        # 刷新表格
+        self._refresh_role_table()
+        # 定位到新增行让用户编辑
+        for row in range(self.role_table.rowCount()):
+            item = self.role_table.item(row, 0)
+            if item and item.data(Qt.UserRole) == new_id:
+                self.role_table.selectRow(row)
+                self.role_table.editItem(self.role_table.item(row, 1))
+                break
 
     def _delete_role_by_id(self, role_id: int):
         ret = QMessageBox.question(self, "确认删除", "确定要删除此角色吗？",
