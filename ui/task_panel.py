@@ -124,7 +124,7 @@ class TaskPanel(QWidget):
         layout.addWidget(QLabel("自动匹配的设备 (勾选确认):"))
         self.matched_device_table = QTableWidget(0, 6)
         self.matched_device_table.setHorizontalHeaderLabels([
-            "", "设备名", "IP", "Section", "Role", "厂商"
+            "", "设备名", "IP", "网络分区", "角色", "厂商"
         ])
         self.matched_device_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.matched_device_table.setMaximumHeight(200)

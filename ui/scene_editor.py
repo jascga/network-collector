@@ -166,7 +166,7 @@ class SceneEditor(QWidget):
         self.dg_group = QGroupBox("设备组 (直接配置)")
         dg_layout = QVBoxLayout(self.dg_group)
         self.dg_table = QTableWidget(0, 4)
-        self.dg_table.setHorizontalHeaderLabels(["Section", "Role", "说明", "命令集"])
+        self.dg_table.setHorizontalHeaderLabels(["网络分区", "角色", "说明", "命令集"])
         self.dg_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.dg_table.setMaximumHeight(100)
         dg_layout.addWidget(self.dg_table)
@@ -481,11 +481,11 @@ class DeviceGroupDialog(QDialog):
 
         self.section_input = QLineEdit()
         self.section_input.setPlaceholderText("如: az* / transit* / *")
-        layout.addRow("Section:", self.section_input)
+        layout.addRow("网络分区:", self.section_input)
 
         self.role_input = QLineEdit()
         self.role_input.setPlaceholderText("如: core / access / distribution / fw")
-        layout.addRow("Role:", self.role_input)
+        layout.addRow("角色:", self.role_input)
 
         self.desc_input = QLineEdit()
         layout.addRow("说明:", self.desc_input)
@@ -542,7 +542,7 @@ class SubSceneDialog(QDialog):
 
         layout.addWidget(QLabel("<b>设备组:</b>"))
         self.dg_table = QTableWidget(0, 3)
-        self.dg_table.setHorizontalHeaderLabels(["Section", "Role", "说明"])
+        self.dg_table.setHorizontalHeaderLabels(["网络分区", "角色", "说明"])
         self.dg_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         layout.addWidget(self.dg_table)
 

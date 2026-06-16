@@ -73,7 +73,7 @@ class RegionMappingDialog(QDialog):
 
         self.section_input = QLineEdit()
         self.section_input.setPlaceholderText("如: Rack1-Core / Rack1-% / %")
-        layout.addRow("Section:", self.section_input)
+        layout.addRow("网络分区:", self.section_input)
 
         self.ssh_combo = QComboBox()
         self._load_ssh_list()
@@ -259,7 +259,7 @@ class ConfigPanel(QWidget):
         region_layout.addLayout(region_bar)
 
         self.region_table = QTableWidget(0, 4)
-        self.region_table.setHorizontalHeaderLabels(["Region", "Section", "SSH连接", "默认"])
+        self.region_table.setHorizontalHeaderLabels(["Region", "网络分区", "SSH连接", "默认"])
         self.region_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.region_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.region_table.setEditTriggers(QTableWidget.NoEditTriggers)

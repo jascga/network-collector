@@ -47,12 +47,12 @@ class AddDeviceDialog(QDialog):
 
         self.section_input = QLineEdit()
         self.section_input.setPlaceholderText("如: Rack1-Core")
-        layout.addRow("Section:", self.section_input)
+        layout.addRow("网络分区:", self.section_input)
 
         self.role_combo = QComboBox()
         self.role_combo.setEditable(True)
         self.role_combo.addItems(["core", "access", "distribution", "fw", "ext"])
-        layout.addRow("Role:", self.role_combo)
+        layout.addRow("角色:", self.role_combo)
 
         self.vendor_combo = QComboBox()
         self.vendor_combo.addItems(["", "VendorA", "VendorB"])
@@ -123,13 +123,13 @@ class DevicePanel(QWidget):
         self.region_filter.addItem("全部", "")
         filter_layout.addWidget(self.region_filter)
 
-        filter_layout.addWidget(QLabel("Section:"))
+        filter_layout.addWidget(QLabel("网络分区:"))
         self.section_filter = QComboBox()
         self.section_filter.setMinimumWidth(100)
         self.section_filter.addItem("全部", "")
         filter_layout.addWidget(self.section_filter)
 
-        filter_layout.addWidget(QLabel("Role:"))
+        filter_layout.addWidget(QLabel("角色:"))
         self.role_filter = QComboBox()
         self.role_filter.addItems(["全部", "core", "access", "distribution", "fw", "ext"])
         filter_layout.addWidget(self.role_filter)
@@ -162,7 +162,7 @@ class DevicePanel(QWidget):
         # 设备列表
         self.device_table = QTableWidget(0, 8)
         self.device_table.setHorizontalHeaderLabels([
-            "设备名", "IP地址", "Region", "Section", "Role", "厂商", "来源", "备注"
+            "设备名", "IP地址", "Region", "网络分区", "角色", "厂商", "来源", "备注"
         ])
         self.device_table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.device_table.setSelectionBehavior(QTableWidget.SelectRows)
