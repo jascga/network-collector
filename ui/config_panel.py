@@ -689,12 +689,24 @@ class ConfigPanel(QWidget):
                 self.role_table.editItem(self.role_table.item(row, 1))
                 break
 
+    def _renumber_roles(self):
+        """删除后重排排序序号为 1,2,3..."""
+        roles = self.db.list_roles()
+        for i, r in enumerate(roles, 1):
+            if r["sort_order"] != i:
+                self.db.conn.execute(
+                    "UPDATE roles SET sort_order=? WHERE id=?",
+                    (i, r["id"]),
+                )
+        self.db.conn.commit()
+
     def _delete_role_by_id(self, role_id: int):
         ret = QMessageBox.question(self, "确认删除", "确定要删除此角色吗？",
                                    QMessageBox.Yes | QMessageBox.No)
         if ret == QMessageBox.Yes:
             try:
                 self.db.delete_role(role_id)
+                self._renumber_roles()
                 self._refresh_role_table()
             except Exception as e:
                 QMessageBox.warning(self, "删除失败", str(e))
