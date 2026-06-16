@@ -19,3 +19,5 @@ tasks/
 
 # Virtual environment
 .venv/
+*.egg-info/
+.venv/lib64
