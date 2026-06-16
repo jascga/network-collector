@@ -56,7 +56,7 @@ class AddDeviceDialog(QDialog):
         layout.addRow("角色:", self.role_combo)
 
         self.vendor_combo = QComboBox()
-        self.vendor_combo.addItems(["", "VendorA", "VendorB"])
+        self._load_vendors()
         layout.addRow("厂商:", self.vendor_combo)
 
         self.desc_input = QLineEdit()
@@ -81,6 +81,18 @@ class AddDeviceDialog(QDialog):
         idx = self.vendor_combo.findText(self.device.get("vendor", ""))
         if idx >= 0:
             self.vendor_combo.setCurrentIndex(idx)
+
+    def _load_vendors(self):
+        """从数据库加载已有厂商列表"""
+        self.vendor_combo.addItem("")
+        try:
+            vendors = self.db.conn.execute(
+                "SELECT DISTINCT vendor FROM devices WHERE vendor != '' ORDER BY vendor"
+            ).fetchall()
+            for v in vendors:
+                self.vendor_combo.addItem(v["vendor"])
+        except Exception:
+            pass
 
     def _load_roles(self):
         """从数据库加载角色列表"""
