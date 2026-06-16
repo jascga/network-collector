@@ -408,8 +408,8 @@ class DevicePanel(QWidget):
 
         headers = [str(h).strip().lower() if h else "" for h in rows[0]]
         required_map = {
-            "hostname": ["hostname", "设备名", "host"],
-            "ip": ["ip", "ip地址", "address"],
+            "hostname": ["hostname", "设备名", "host", "host name", "host_name", "name"],
+            "ip": ["ip", "ip地址", "address", "ip address", "ip_address"],
             "region": ["region", "区域"],
             "section": ["section", "分区"],
             "role": ["role", "角色"],
@@ -420,8 +420,11 @@ class DevicePanel(QWidget):
         col_map = {}
         for key, candidates in required_map.items():
             for c in candidates:
-                if c in headers:
-                    col_map[key] = headers.index(c)
+                for i, h in enumerate(headers):
+                    if c in h:
+                        col_map[key] = i
+                        break
+                if key in col_map:
                     break
 
         if "hostname" not in col_map or "ip" not in col_map:
