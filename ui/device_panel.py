@@ -148,6 +148,9 @@ class DevicePanel(QWidget):
 
         # 操作按钮栏
         btn_layout = QHBoxLayout()
+        btn_template = QPushButton("📄 下载模板")
+        btn_template.clicked.connect(self._download_template)
+        btn_layout.addWidget(btn_template)
         btn_import = QPushButton("📥 导入Excel")
         btn_import.clicked.connect(self._import_excel)
         btn_layout.addWidget(btn_import)
@@ -202,6 +205,22 @@ class DevicePanel(QWidget):
             idx = self.region_filter.findData(current)
             if idx >= 0:
                 self.region_filter.setCurrentIndex(idx)
+
+    def _download_template(self):
+        """导出 Excel 导入模板"""
+        from pathlib import Path
+        import shutil
+        template_src = Path(__file__).parent.parent / "config" / "device_import_template.xlsx"
+        if not template_src.exists():
+            QMessageBox.warning(self, "提示", "模板文件不存在")
+            return
+        dst, _ = QFileDialog.getSaveFileName(
+            self, "保存模板", "device_import_template.xlsx",
+            "Excel files (*.xlsx);;All Files (*)"
+        )
+        if dst:
+            shutil.copy(template_src, dst)
+            QMessageBox.information(self, "提示", f"模板已保存到:\n{dst}")
 
     def _on_search(self):
         region = self.region_filter.currentData() or None
