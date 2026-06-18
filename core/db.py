@@ -146,7 +146,7 @@ INSERT_DEFAULTS = [
 ]
 
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 MIGRATIONS = {
     2: [
@@ -164,6 +164,9 @@ MIGRATIONS = {
         "INSERT OR IGNORE INTO roles (name, sort_order) VALUES ('dcc', 3)",
         "INSERT OR IGNORE INTO roles (name, sort_order) VALUES ('dsw', 4)",
         "INSERT OR IGNORE INTO roles (name, sort_order) VALUES ('tor', 5)",
+    ],
+    5: [
+        "CREATE TABLE IF NOT EXISTS commands (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,\n            name TEXT UNIQUE NOT NULL,\n            cmd TEXT NOT NULL,\n            cmd_type TEXT DEFAULT 'simple',\n            vendor TEXT,\n            description TEXT,\n            created_at TEXT,\n            updated_at TEXT\n        )",
     ],
 }
 
@@ -498,11 +501,58 @@ class Database:
         self.conn.execute("DELETE FROM roles WHERE id=?", (role_id,))
         self.conn.commit()
 
-    # ── 命令集 ────────────────────────────────────────
+    # ── 命令（原子）────────────────────────────────────
+
+    def list_commands(self) -> list:
+        """获取所有命令"""
+        rows = self.conn.execute("SELECT * FROM commands ORDER BY name").fetchall()
+        return [dict(r) for r in rows]
+
+    def get_command(self, cmd_id: int) -> Optional[dict]:
+        r = self.conn.execute("SELECT * FROM commands WHERE id=?", (cmd_id,)).fetchone()
+        return dict(r) if r else None
+
+    def save_command(self, data: dict) -> int:
+        now = datetime.datetime.now().isoformat()
+        data["created_at"] = now
+        data["updated_at"] = now
+        cur = self.conn.execute("""INSERT INTO commands (name,cmd,cmd_type,vendor,description,created_at,updated_at)
+            VALUES (:name,:cmd,:cmd_type,:vendor,:description,:created_at,:updated_at)""", data)
+        self.conn.commit()
+        return cur.lastrowid
+
+    def update_command(self, cmd_id: int, data: dict):
+        data["updated_at"] = datetime.datetime.now().isoformat()
+        data["id"] = cmd_id
+        self.conn.execute("""UPDATE commands SET
+            name=:name,cmd=:cmd,cmd_type=:cmd_type,vendor=:vendor,
+            description=:description,updated_at=:updated_at
+            WHERE id=:id""", data)
+        self.conn.commit()
+
+    def delete_command(self, cmd_id: int):
+        self.conn.execute("DELETE FROM commands WHERE id=?", (cmd_id,))
+        self.conn.commit()
+
+    def get_command_names(self, cmd_ids: list) -> list:
+        """根据命令 ID 列表获取名称列表"""
+        if not cmd_ids:
+            return []
+        placeholders = ",".join(["?"] * len(cmd_ids))
+        rows = self.conn.execute(
+            f"SELECT id, name FROM commands WHERE id IN ({placeholders})", cmd_ids
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    # ── 命令集（组合）──────────────────────────────────
 
     def list_command_sets(self) -> list:
         rows = self.conn.execute("SELECT * FROM command_sets ORDER BY name").fetchall()
         return [dict(r) for r in rows]
+
+    def get_command_set(self, cmd_set_id: int) -> Optional[dict]:
+        r = self.conn.execute("SELECT * FROM command_sets WHERE id=?", (cmd_set_id,)).fetchone()
+        return dict(r) if r else None
 
     def save_command_set(self, data: dict) -> int:
         now = datetime.datetime.now().isoformat()
@@ -515,22 +565,47 @@ class Database:
         self.conn.commit()
         return cur.lastrowid
 
-    def update_command_set(self, cmd_id: int, data: dict):
+    def update_command_set(self, cmd_set_id: int, data: dict):
         """更新命令集"""
         data["updated_at"] = datetime.datetime.now().isoformat()
         if isinstance(data.get("commands"), list):
             data["commands"] = json.dumps(data["commands"], ensure_ascii=False)
-        data["id"] = cmd_id
+        data["id"] = cmd_set_id
         self.conn.execute("""UPDATE command_sets SET
             name=:name,vendor=:vendor,description=:description,
             commands=:commands,updated_at=:updated_at
             WHERE id=:id""", data)
         self.conn.commit()
 
-    def delete_command_set(self, cmd_id: int):
+    def delete_command_set(self, cmd_set_id: int):
         """删除命令集"""
-        self.conn.execute("DELETE FROM command_sets WHERE id=?", (cmd_id,))
+        self.conn.execute("DELETE FROM command_sets WHERE id=?", (cmd_set_id,))
         self.conn.commit()
+
+    def get_command_set_commands(self, cmd_set_id: int) -> list:
+        """获取命令集引用的所有命令详情"""
+        row = self.conn.execute(
+            "SELECT commands FROM command_sets WHERE id=?", (cmd_set_id,)
+        ).fetchone()
+        if not row:
+            return []
+        cmd_ids = row["commands"]
+        if isinstance(cmd_ids, str):
+            try:
+                cmd_ids = json.loads(cmd_ids)
+            except json.JSONDecodeError:
+                cmd_ids = []
+        if not cmd_ids:
+            return []
+        # cmd_ids 可能是旧格式（dict 列表）或新格式（int 列表）
+        if cmd_ids and isinstance(cmd_ids[0], dict):
+            return cmd_ids  # 旧格式，直接返回
+        # 新格式：ID 列表
+        placeholders = ",".join(["?"] * len(cmd_ids))
+        rows = self.conn.execute(
+            f"SELECT * FROM commands WHERE id IN ({placeholders})", cmd_ids
+        ).fetchall()
+        return [dict(r) for r in rows]
 
     # ── 导入导出 ──────────────────────────────────────
 

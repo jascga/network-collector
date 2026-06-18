@@ -96,7 +96,7 @@ class MainWindow(QMainWindow):
             ("⚙ 全局配置", "config_ssh"),
             ("🖥️ 设备管理", "config_device"),
             ("📐 场景编辑", "config_scene"),
-            ("⌨️ 命令集", "config_commands"),
+            ("⌨️ 命令与命令集", "config_commands"),
         ]
         for label, key in nav_items:
             item = QTreeWidgetItem([label])

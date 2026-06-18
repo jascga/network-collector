@@ -220,7 +220,19 @@ class SceneEditor(QWidget):
     def _refresh_cmd_check_list(self):
         self.cmd_check_list.clear()
         for cs in self.db.list_command_sets():
-            item = QListWidgetItem(cs["name"])
+            # 显示命令集名 + 命令数
+            cmd_ids = cs.get("commands", "[]")
+            if isinstance(cmd_ids, str):
+                try:
+                    cmd_ids = json.loads(cmd_ids)
+                except json.JSONDecodeError:
+                    cmd_ids = []
+            if cmd_ids and isinstance(cmd_ids[0], dict):
+                cmd_count = len(cmd_ids)
+            else:
+                cmd_count = len(cmd_ids) if isinstance(cmd_ids, list) else 0
+            label = f"{cs['name']} ({cmd_count}条命令)"
+            item = QListWidgetItem(label)
             item.setData(Qt.UserRole, cs["id"])
             item.setCheckState(Qt.Unchecked)
             self.cmd_check_list.addItem(item)
@@ -371,6 +383,7 @@ class SceneEditor(QWidget):
             self._refresh_dg_table()
 
     def _get_cmd_names(self, cmd_ids: list) -> list:
+        """根据命令集 ID 列表获取命令集名称列表"""
         names = []
         for cid in cmd_ids:
             row = self.db.conn.execute(
@@ -496,7 +509,18 @@ class DeviceGroupDialog(QDialog):
         layout.addRow(QLabel("命令集 (可多选):"))
         self.cmd_list = QListWidget()
         for cs in self.db.list_command_sets():
-            item = QListWidgetItem(cs["name"])
+            cmd_ids = cs.get("commands", "[]")
+            if isinstance(cmd_ids, str):
+                try:
+                    cmd_ids = json.loads(cmd_ids)
+                except json.JSONDecodeError:
+                    cmd_ids = []
+            if cmd_ids and isinstance(cmd_ids[0], dict):
+                cmd_count = len(cmd_ids)
+            else:
+                cmd_count = len(cmd_ids) if isinstance(cmd_ids, list) else 0
+            label = f"{cs['name']} ({cmd_count}条命令)"
+            item = QListWidgetItem(label)
             item.setData(Qt.UserRole, cs["id"])
             item.setCheckState(Qt.Unchecked)
             self.cmd_list.addItem(item)

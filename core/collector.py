@@ -369,28 +369,65 @@ class Collector:
             callback(task_id, summary)
 
     def _build_commands(self, command_set_ids: list) -> list:
-        """从命令集 ID 列表构建命令列表"""
+        """从命令集 ID 列表构建命令列表
+
+        支持两种格式：
+        - 新格式：commands 字段存命令 ID 列表 [1, 2, 3]
+        - 旧格式：commands 字段存命令字典列表 [{"cmd":"...", "type":"..."}]
+        """
         commands = []
         if not command_set_ids:
             return commands
-        for cmd_id in command_set_ids:
+        for cmd_set_id in command_set_ids:
             row = self.db.conn.execute(
-                "SELECT id, commands FROM command_sets WHERE id=?", (cmd_id,)
+                "SELECT id, commands FROM command_sets WHERE id=?", (cmd_set_id,)
             ).fetchone()
             if not row:
-                logger.warning(f"命令集 ID {cmd_id} 不存在，跳过")
+                logger.warning(f"命令集 ID {cmd_set_id} 不存在，跳过")
                 continue
             cmds_json = row["commands"]
             if isinstance(cmds_json, str):
                 try:
                     cmds = json.loads(cmds_json)
                 except json.JSONDecodeError as e:
-                    logger.warning(f"命令集 {cmd_id} JSON 解析失败: {e}")
+                    logger.warning(f"命令集 {cmd_set_id} JSON 解析失败: {e}")
                     continue
             elif isinstance(cmds_json, list):
                 cmds = cmds_json
             else:
                 continue
-            if isinstance(cmds, list):
-                commands.extend(cmd if isinstance(cmd, dict) else {"cmd": str(cmd)} for cmd in cmds)
+            if not isinstance(cmds, list):
+                continue
+
+            # 判断格式：旧格式是 dict 列表，新格式是 int 列表
+            if cmds and isinstance(cmds[0], dict):
+                # 旧格式：直接使用
+                commands.extend(
+                    cmd if isinstance(cmd, dict) else {"cmd": str(cmd)}
+                    for cmd in cmds
+                )
+            else:
+                # 新格式：ID 列表，从 commands 表查询
+                for cmd_id in cmds:
+                    cmd_row = self.db.conn.execute(
+                        "SELECT id, name, cmd, cmd_type FROM commands WHERE id=?",
+                        (cmd_id,),
+                    ).fetchone()
+                    if not cmd_row:
+                        logger.warning(f"命令 ID {cmd_id} 不存在，跳过")
+                        continue
+                    cmd_type = cmd_row.get("cmd_type", "simple")
+                    if cmd_type == "foreach":
+                        # foreach 类型的 cmd 字段存的是完整 JSON
+                        try:
+                            cmd_spec = json.loads(cmd_row["cmd"])
+                            commands.append(cmd_spec)
+                        except json.JSONDecodeError:
+                            logger.warning(f"命令 {cmd_id} foreach JSON 解析失败")
+                            continue
+                    else:
+                        commands.append({
+                            "cmd": cmd_row["cmd"],
+                            "type": cmd_type,
+                        })
         return commands
