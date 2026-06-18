@@ -41,6 +41,9 @@ class CommandSetPanel(QWidget):
         btn_cmd_new = QPushButton("+ 新增命令")
         btn_cmd_new.clicked.connect(self._cmd_new)
         cmd_top.addWidget(btn_cmd_new)
+        btn_cmd_del = QPushButton("删除命令")
+        btn_cmd_del.clicked.connect(self._cmd_delete_selected)
+        cmd_top.addWidget(btn_cmd_del)
         cmd_layout.addLayout(cmd_top)
 
         # 命令表格
@@ -95,6 +98,9 @@ class CommandSetPanel(QWidget):
         btn_cs_new = QPushButton("+ 新增命令集")
         btn_cs_new.clicked.connect(self._cs_new)
         cs_top.addWidget(btn_cs_new)
+        btn_cs_del = QPushButton("删除命令集")
+        btn_cs_del.clicked.connect(self._cs_delete_selected)
+        cs_top.addWidget(btn_cs_del)
         cs_layout.addLayout(cs_top)
 
         # 命令集表格 + 编辑区（左右分栏）
@@ -244,6 +250,22 @@ class CommandSetPanel(QWidget):
                     self._cs_refresh_cmd_list()
                     self._cmd_new()
 
+    def _cmd_delete_selected(self):
+        row = self.cmd_table.currentRow()
+        if row < 0:
+            QMessageBox.warning(self, "提示", "请先选中要删除的命令")
+            return
+        cmd_id = self.cmd_table.item(row, 0).data(Qt.UserRole)
+        ret = QMessageBox.question(
+            self, "确认", "确定要删除此命令吗？",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if ret == QMessageBox.Yes:
+            self.db.delete_command(cmd_id)
+            self._cmd_refresh_list()
+            self._cs_refresh_cmd_list()
+            self._cmd_new()
+
     # ══════════════════════════════════════════════════
     # 命令集管理
     # ══════════════════════════════════════════════════
@@ -372,3 +394,18 @@ class CommandSetPanel(QWidget):
                     self.db.delete_command_set(cs_id)
                     self._cs_refresh_list()
                     self._cs_new()
+
+    def _cs_delete_selected(self):
+        row = self.cs_table.currentRow()
+        if row < 0:
+            QMessageBox.warning(self, "提示", "请先选中要删除的命令集")
+            return
+        cs_id = self.cs_table.item(row, 0).data(Qt.UserRole)
+        ret = QMessageBox.question(
+            self, "确认", "确定要删除此命令集吗？",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if ret == QMessageBox.Yes:
+            self.db.delete_command_set(cs_id)
+            self._cs_refresh_list()
+            self._cs_new()
