@@ -13,16 +13,6 @@ from typing import Optional
 
 # ── 数据库初始化 ──────────────────────────────────────
 
-SCHEMA_VERSION = 2
-
-MIGRATIONS = {
-    2: [
-        # v2: SSH连接表增加状态字段
-        "ALTER TABLE ssh_connections ADD COLUMN status TEXT DEFAULT 'untested'",
-        "ALTER TABLE ssh_connections ADD COLUMN last_test_at TEXT",
-    ],
-}
-
 CREATE_TABLES = [
     # SSH连接
     """CREATE TABLE IF NOT EXISTS ssh_connections (
@@ -85,39 +75,23 @@ CREATE_TABLES = [
         created_at TEXT,
         updated_at TEXT
     )""",
-
-    # 场景模板
-    """CREATE TABLE IF NOT EXISTS scene_templates (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        scene_type TEXT NOT NULL,
-        description TEXT,
-        analyzer_plugin TEXT NOT NULL,   -- 绑定的分析插件
-        web_system TEXT DEFAULT '',
-        version INTEGER DEFAULT 1,
-        input_params TEXT,               -- JSON: 输入参数定义
-        sub_scenes TEXT,                 -- JSON: 子场景
-        device_groups TEXT,              -- JSON: 设备组
-        command_set_ids TEXT,            -- JSON: [1, 2, 3]
-        is_template INTEGER DEFAULT 0,   -- 预置模板
-        created_at TEXT,
-        updated_at TEXT
-    )""",
+    # 场景模板（v7 已删除，场景系统改为 plugins/ 目录）
 
     # 任务
     """CREATE TABLE IF NOT EXISTS tasks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
-        scene_template_id INTEGER,
-        scene_version INTEGER,
-        scene_snapshot TEXT,          -- JSON: 创建时的完整场景快照
-        region TEXT,
+        plugin_name TEXT,              -- 场景插件 ID (=plugins/下的目录名)
+        plugin_version TEXT,           -- 插件版本
+        plugin_params TEXT,            -- JSON: 运行时参数（含 region）
+        region TEXT,                   -- 独立字段（方便查询/筛选）
         status TEXT DEFAULT 'pending', -- pending/running/completed/failed/cancelled
-        input_params TEXT,             -- JSON: 用户填的输入参数
         device_list TEXT,              -- JSON: 实际采集的设备
         result_summary TEXT,           -- JSON: 分析结论摘要
         created_at TEXT,
-        completed_at TEXT
+        started_at TEXT,
+        completed_at TEXT,
+        error_message TEXT             -- 失败原因
     )""",
 
     # 数据库版本
@@ -146,7 +120,7 @@ INSERT_DEFAULTS = [
 ]
 
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 7
 
 MIGRATIONS = {
     2: [
@@ -167,6 +141,34 @@ MIGRATIONS = {
     ],
     5: [
         "CREATE TABLE IF NOT EXISTS commands (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,\n            name TEXT UNIQUE NOT NULL,\n            cmd TEXT NOT NULL,\n            cmd_type TEXT DEFAULT 'simple',\n            vendor TEXT,\n            description TEXT,\n            created_at TEXT,\n            updated_at TEXT\n        )",
+    ],
+    6: [
+        # v6: commands 表增加 parser 字段（解析器名），支持新机制下的"命令→解析器"绑定
+        "ALTER TABLE commands ADD COLUMN parser TEXT",
+    ],
+    7: [
+        # v7: 场景系统从 scene_templates 改为 plugins/ 目录
+        #     tasks 表去掉老字段，加新字段
+        "DROP TABLE IF EXISTS scene_templates",
+        "CREATE TABLE IF NOT EXISTS tasks_new ("
+        "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "  name TEXT,"
+        "  plugin_name TEXT,"
+        "  plugin_version TEXT,"
+        "  plugin_params TEXT,"
+        "  region TEXT,"
+        "  status TEXT DEFAULT 'pending',"
+        "  device_list TEXT,"
+        "  result_summary TEXT,"
+        "  created_at TEXT,"
+        "  started_at TEXT,"
+        "  completed_at TEXT,"
+        "  error_message TEXT"
+        ")",
+        "INSERT INTO tasks_new (id, name, region, status, device_list, result_summary, created_at, completed_at)"
+        "  SELECT id, name, region, status, device_list, result_summary, created_at, completed_at FROM tasks",
+        "DROP TABLE tasks",
+        "ALTER TABLE tasks_new RENAME TO tasks",
     ],
 }
 
@@ -392,83 +394,68 @@ class Database:
         """, (region, section_glob, role)).fetchall()
         return [dict(r) for r in rows]
 
-    # ── 场景模板 ──────────────────────────────────────
-
-    def list_scenes(self) -> list:
-        rows = self.conn.execute("SELECT * FROM scene_templates ORDER BY name").fetchall()
-        return [dict(r) for r in rows]
-
-    def get_scene(self, scene_id: int) -> Optional[dict]:
-        r = self.conn.execute("SELECT * FROM scene_templates WHERE id=?", (scene_id,)).fetchone()
-        return dict(r) if r else None
-
-    def save_scene(self, data: dict) -> int:
-        now = datetime.datetime.now().isoformat()
-        data["created_at"] = now
-        data["updated_at"] = now
-        for field in ("input_params", "sub_scenes", "device_groups", "command_set_ids"):
-            if isinstance(data.get(field), (list, dict)):
-                data[field] = json.dumps(data[field], ensure_ascii=False)
-        cur = self.conn.execute("""INSERT INTO scene_templates
-            (name,scene_type,description,analyzer_plugin,web_system,version,
-             input_params,sub_scenes,device_groups,command_set_ids,is_template,created_at,updated_at)
-            VALUES (:name,:scene_type,:description,:analyzer_plugin,:web_system,:version,
-             :input_params,:sub_scenes,:device_groups,:command_set_ids,:is_template,:created_at,:updated_at)""", data)
-        self.conn.commit()
-        return cur.lastrowid
-
-    def update_scene(self, scene_id: int, data: dict):
-        """更新场景"""
-        data["updated_at"] = datetime.datetime.now().isoformat()
-        for field in ("input_params", "sub_scenes", "device_groups", "command_set_ids"):
-            if isinstance(data.get(field), (list, dict)):
-                data[field] = json.dumps(data[field], ensure_ascii=False)
-        data["id"] = scene_id
-        self.conn.execute("""UPDATE scene_templates SET
-            name=:name,scene_type=:scene_type,description=:description,
-            analyzer_plugin=:analyzer_plugin,web_system=:web_system,version=:version,
-            input_params=:input_params,sub_scenes=:sub_scenes,
-            device_groups=:device_groups,command_set_ids=:command_set_ids,
-            is_template=:is_template,updated_at=:updated_at
-            WHERE id=:id""", data)
-        self.conn.commit()
-
-    def delete_scene(self, scene_id: int):
-        """删除场景"""
-        self.conn.execute("DELETE FROM scene_templates WHERE id=?", (scene_id,))
-        self.conn.commit()
+    # ── 场景插件 ──
+    # v7+ 场景系统改为 plugins/ 目录
+    # 场景列表由 core.scene_registry 扫描获取，不再存数据库
+    # tasks 表只存 plugin_name + plugin_version 引用
 
     # ── 任务 ──────────────────────────────────────────
 
     def create_task(self, data: dict) -> int:
+        """创建任务（v7+ 新格式）
+
+        data 必填字段:
+            name, plugin_name, plugin_version, plugin_params (dict)
+        可选字段:
+            region, status, device_list
+        """
         now = datetime.datetime.now().isoformat()
-        data["created_at"] = now
-        for field in ("scene_snapshot", "input_params", "device_list"):
-            if isinstance(data.get(field), (list, dict)):
-                data[field] = json.dumps(data[field], ensure_ascii=False)
+        data.setdefault("created_at", now)
+        if isinstance(data.get("plugin_params"), (list, dict)):
+            data["plugin_params"] = json.dumps(data["plugin_params"], ensure_ascii=False)
+        if isinstance(data.get("device_list"), (list, dict)):
+            data["device_list"] = json.dumps(data["device_list"], ensure_ascii=False)
         cur = self.conn.execute("""INSERT INTO tasks
-            (name,scene_template_id,scene_version,scene_snapshot,region,status,input_params,device_list,created_at)
-            VALUES (:name,:scene_template_id,:scene_version,:scene_snapshot,:region,:status,:input_params,:device_list,:created_at)""", data)
+            (name, plugin_name, plugin_version, plugin_params, region, status, device_list, created_at)
+            VALUES (:name, :plugin_name, :plugin_version, :plugin_params, :region, :status, :device_list, :created_at)""", data)
         self.conn.commit()
         return cur.lastrowid
 
-    def update_task_status(self, task_id: int, status: str, result_summary: dict = None):
+    def update_task_status(self, task_id: int, status: str, result_summary: dict = None,
+                            error_message: str = None):
+        now = datetime.datetime.now().isoformat()
         data = {
-            "id": task_id,
-            "status": status,
+            "id":             task_id,
+            "status":         status,
             "result_summary": json.dumps(result_summary, ensure_ascii=False) if result_summary else None,
-            "completed_at": datetime.datetime.now().isoformat() if status in ("completed", "failed", "cancelled") else None,
+            "completed_at":   now if status in ("completed", "failed", "cancelled") else None,
+            "error_message":  error_message,
         }
-        self.conn.execute("""UPDATE tasks SET status=:status,result_summary=:result_summary,completed_at=:completed_at WHERE id=:id""", data)
+        self.conn.execute("""UPDATE tasks SET
+            status=:status, result_summary=:result_summary,
+            completed_at=:completed_at, error_message=:error_message
+            WHERE id=:id""", data)
         self.conn.commit()
 
-    def list_tasks(self, limit: int = 50) -> list:
-        rows = self.conn.execute("SELECT * FROM tasks ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+    def list_tasks(self, limit: int = 50, plugin_name: str = None) -> list:
+        sql = "SELECT * FROM tasks"
+        params: list = []
+        if plugin_name:
+            sql += " WHERE plugin_name=?"
+            params.append(plugin_name)
+        sql += " ORDER BY created_at DESC LIMIT ?"
+        params.append(limit)
+        rows = self.conn.execute(sql, params).fetchall()
         return [dict(r) for r in rows]
 
     def get_task(self, task_id: int) -> Optional[dict]:
         r = self.conn.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
         return dict(r) if r else None
+
+    def delete_task(self, task_id: int):
+        """删除任务记录（任务输出目录不删，交给用户手动清理）"""
+        self.conn.execute("DELETE FROM tasks WHERE id=?", (task_id,))
+        self.conn.commit()
 
     # ── 角色 ──────────────────────────────────────────
 
@@ -516,8 +503,8 @@ class Database:
         now = datetime.datetime.now().isoformat()
         data["created_at"] = now
         data["updated_at"] = now
-        cur = self.conn.execute("""INSERT INTO commands (name,cmd,cmd_type,vendor,description,created_at,updated_at)
-            VALUES (:name,:cmd,:cmd_type,:vendor,:description,:created_at,:updated_at)""", data)
+        cur = self.conn.execute("""INSERT INTO commands (name,cmd,cmd_type,vendor,description,parser,created_at,updated_at)
+            VALUES (:name,:cmd,:cmd_type,:vendor,:description,:parser,:created_at,:updated_at)""", data)
         self.conn.commit()
         return cur.lastrowid
 
@@ -526,7 +513,7 @@ class Database:
         data["id"] = cmd_id
         self.conn.execute("""UPDATE commands SET
             name=:name,cmd=:cmd,cmd_type=:cmd_type,vendor=:vendor,
-            description=:description,updated_at=:updated_at
+            description=:description,parser=:parser,updated_at=:updated_at
             WHERE id=:id""", data)
         self.conn.commit()
 

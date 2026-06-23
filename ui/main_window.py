@@ -80,8 +80,6 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
         self.status_label = QLabel("就绪")
         self.status_bar.addWidget(self.status_label, 1)
-        self.last_task_label = QLabel("")
-        self.status_bar.addPermanentWidget(self.last_task_label)
 
     def _build_nav_tree(self):
         """构建导航树"""
@@ -95,7 +93,7 @@ class MainWindow(QMainWindow):
         nav_items = [
             ("⚙ 全局配置", "config_ssh"),
             ("🖥️ 设备管理", "config_device"),
-            ("📐 场景编辑", "config_scene"),
+            ("🧩 场景插件", "config_plugins"),
             ("⌨️ 命令与命令集", "config_commands"),
         ]
         for label, key in nav_items:
@@ -103,21 +101,12 @@ class MainWindow(QMainWindow):
             item.setData(0, Qt.UserRole, key)
             config_group.addChild(item)
 
-        # 任务分组
-        task_group = QTreeWidgetItem(["📋 任务"])
-        task_group.setFlags(task_group.flags() & ~Qt.ItemIsSelectable)
-        task_group.setData(0, Qt.UserRole, "group_task")
-        task_group.setExpanded(True)
-        self.nav_tree.addTopLevelItem(task_group)
-
-        task_items = [
-            ("➕ 创建任务", "task_create"),
-            ("📊 历史记录", "task_history"),
-        ]
-        for label, key in task_items:
-            item = QTreeWidgetItem([label])
-            item.setData(0, Qt.UserRole, key)
-            task_group.addChild(item)
+        # 使用说明
+        info_item = QTreeWidgetItem(["ℹ️ 使用说明"])
+        info_item.setFlags(info_item.flags() & ~Qt.ItemIsSelectable)
+        info_item.setData(0, Qt.UserRole, "group_info")
+        info_item.setExpanded(False)
+        self.nav_tree.addTopLevelItem(info_item)
 
     def _on_nav_clicked(self, item, column):
         key = item.data(0, Qt.UserRole)
@@ -144,39 +133,25 @@ class MainWindow(QMainWindow):
     # ── 加载页面 ──────────────────────────────────────
 
     def _load_pages(self):
-        """延迟导入并加载所有页面"""
+        """延迟导入并加载所有页面
+
+        v7+: 场景系统改为 plugins/ 目录。GUI 只负责配置设备/SSH/命令/查看插件列表。
+        任务创建/执行/查看全走 CLI（cli/create_task.py / cli/run_task.py）。
+        """
         from ui.config_panel import ConfigPanel
         from ui.device_panel import DevicePanel
-        from ui.scene_editor import SceneEditor
         from ui.command_set_panel import CommandSetPanel
-        from ui.task_panel import TaskPanel
-        from ui.task_execution import TaskExecutionPanel
-        from ui.result_panel import ResultPanel
+        from ui.plugin_manager import PluginManager
 
         self._pages = {
-            "config_ssh": ConfigPanel(self),
-            "config_device": DevicePanel(self),
-            "config_scene": SceneEditor(self),
+            "config_ssh":     ConfigPanel(self),
+            "config_device":  DevicePanel(self),
             "config_commands": CommandSetPanel(self),
-            "task_create": TaskPanel(self),
-            "task_history": TaskPanel(self, show_history=True),
-            "task_execution": TaskExecutionPanel(self),
-            "task_result": ResultPanel(self),
+            "config_plugins": PluginManager(self),
         }
         for w in self._pages.values():
             self.content_stack.addWidget(w)
 
-    def show_task_progress(self, task_id: int):
-        """跳转到任务执行进度页"""
-        self._navigate_to("task_execution", {"task_id": task_id})
-
-    def show_task_result(self, task_id: int):
-        """跳转到任务结果页"""
-        self._navigate_to("task_result", {"task_id": task_id})
-
     def set_status(self, text: str):
         """更新状态栏"""
         self.status_label.setText(text)
-
-    def update_last_task(self, info: str):
-        self.last_task_label.setText(info)
